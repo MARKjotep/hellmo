@@ -1,0 +1,38 @@
+{
+  "code-runner.languageIdToFileExtensionMap": {
+    "bat": ".bat",
+    "powershell": ".ps1",
+    "typescript": ".ts"
+  },
+  "code-runner.executorMapByGlob": {
+    "pom.xml": "cd $dir && mvn clean package"
+  },
+  "python.defaultInterpreterPath": "python3",
+
+  "editor.wordWrap": "on",
+  "editor.lineNumbers": "off",
+  "editor.glyphMargin": false,
+  "python.analysis.autoImportCompletions": false,
+  "editor.lightbulb.enabled": "off",
+
+  "code-runner.executorMap": {
+    "typescript": "bun run"
+  },
+  "code-runner.executorMapByFileExtension": {
+    ".cu": "cd $dir && nvcc $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
+    ".ring": "ring",
+    ".sml": "cd $dir && sml $fileName",
+    ".tsx": "bun run $dir$fileName",
+    ".ts": "bun run $dir$fileName"
+  },
+
+
+  "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "match": "z.ts",
+        "cmd": "bun run ${file}"
+      }
+    ]
+  }
+}
