@@ -1,1 +1,3 @@
-console.log("hello");
+import { $ } from "./elem";
+
+export { $ };
