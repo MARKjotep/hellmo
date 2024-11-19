@@ -1,4 +1,20 @@
-import { str, make, O, is } from "../_misc/__";
+import {
+  isArr,
+  isBool,
+  isDict,
+  isFN,
+  isNum,
+  isNumber,
+  isObj,
+  isStr,
+  makeID,
+  ngify,
+  oAss,
+  oItems,
+  oKeys,
+  oLen,
+  reCamel,
+} from "./core/@";
 
 type V = string | number | boolean;
 type S = string | string[] | ((e?: Element) => S) | boolean;
@@ -121,7 +137,7 @@ const has = {
 
 export class $$ {
   static set p(a: any) {
-    if (is.arr(a)) {
+    if (isArr(a)) {
       console.log(...a);
     } else {
       console.log(a);
@@ -134,11 +150,11 @@ class idm {
   private id = "";
   constructor(mid?: string) {
     this._c = 0;
-    this.id = mid ?? make.ID(5);
+    this.id = mid ?? makeID(5);
     if (mid && mid.includes("_")) {
       const sa = mid.split("_");
       const lstr = sa.slice(-1).toString();
-      const nm = is.number(lstr);
+      const nm = isNumber(lstr);
       this.id = sa.slice(0, -1).join("_");
       this._c = nm ? parseInt(lstr) : 0;
     }
@@ -150,7 +166,7 @@ class idm {
 
 class Mapper<K, V> extends Map<K, V> {
   obj(obj?: object | null) {
-    obj && O.items(obj).forEach(([k, v]) => this.set(k as K, v));
+    obj && oItems(obj).forEach(([k, v]) => this.set(k as K, v));
   }
   map(map: Map<K, V>) {
     map.forEach((v, k) => {
@@ -188,9 +204,20 @@ ESCAPE
 */
 if (typeof window === "undefined") {
   Object.assign(global, {
-    window: {},
-    document: {},
-    location: {},
+    window: {
+      location: {
+        pathname: "",
+      },
+    },
+    document: {
+      querySelector: () => ({}),
+      querySelectorAll: () => ({}),
+    },
+    location: {
+      location: {
+        pathname: "",
+      },
+    },
     localStorage: {},
     sessionStorage: {},
     navigator: {},
@@ -246,7 +273,7 @@ class anim {
       { x = 0, y = 0 }: { x?: any; y?: any },
       options: kf = {},
     ): anim => {
-      O.ass(this.opt, options);
+      oAss(this.opt, options);
       const ac = [
         [x, y],
         [0, 0],
@@ -273,7 +300,7 @@ class anim {
     };
   }
   fade(options: kf = {}) {
-    O.ass(this.opt, options);
+    oAss(this.opt, options);
     const ac = [0, 1].map((k) => ({
       opacity: k,
     }));
@@ -281,7 +308,7 @@ class anim {
     return this;
   }
   shake(XorY = "Y", opt: kf = {}) {
-    O.ass(this.opt, opt);
+    oAss(this.opt, opt);
     const ac = [0, 5, -5, 5, 0].map((k) => ({
       transform: `translate${XorY}(${k}px)`,
     }));
@@ -289,13 +316,13 @@ class anim {
     return this;
   }
   color(c: string[] = [], opt: kf = {}) {
-    O.ass(this.opt, opt);
+    oAss(this.opt, opt);
     let ac = Array.isArray(c) ? c.map((cc) => ({ color: cc })) : { color: c };
     this.e.animate(ac, this.opt);
     return this;
   }
   bg(c: string | string[] = [], opt: kf = {}) {
-    O.ass(this.opt, opt);
+    oAss(this.opt, opt);
     let ac = Array.isArray(c)
       ? c.map((cc) => ({ backgroundColor: cc }))
       : { backgroundColor: c };
@@ -303,7 +330,7 @@ class anim {
     return this;
   }
   bounce(sVal = 1, opt: kf = {}) {
-    O.ass(this.opt, opt);
+    oAss(this.opt, opt);
     const ad = [0.5, sVal, 1].map((mp) => ({ transform: `scale(${mp})` }));
     this.e.animate(ad);
     return this;
@@ -408,7 +435,7 @@ class Eget<T extends TElem = HTMLElement> {
       ) => {
         const TES: obj<any> = CC;
         const styler = () => {
-          O.items(style).forEach(([st, vs]) => {
+          oItems(style).forEach(([st, vs]) => {
             if (st in TES) {
               if (TES[st] !== vs) {
                 TES[st] = vs;
@@ -421,11 +448,11 @@ class Eget<T extends TElem = HTMLElement> {
           });
         };
 
-        if (is.fn(delayOrFN)) {
+        if (isFN(delayOrFN)) {
           TT.on("transitionend", delayOrFN);
         }
 
-        if (is.num(delayOrFN)) {
+        if (isNum(delayOrFN)) {
           setTimeout(styler, delayOrFN);
         } else {
           styler();
@@ -613,10 +640,10 @@ export class Elem<T extends TElem = HTMLElement> extends Eget {
       fill: "forwards",
     };
 
-    if (is.fn(optionsOrOnComplete)) {
+    if (isFN(optionsOrOnComplete)) {
       onComplete = optionsOrOnComplete;
     } else {
-      O.ass(opt, optionsOrOnComplete);
+      oAss(opt, optionsOrOnComplete);
     }
     const anim = this.e.animate(keyframes as Keyframe[], opt);
 
@@ -630,7 +657,7 @@ export class Elem<T extends TElem = HTMLElement> extends Eget {
 export function $(query: string): Elem | undefined;
 export function $<T extends TElem = HTMLElement>(element: T): Elem<T>;
 export function $<T extends TElem = HTMLElement>(element: T | string) {
-  if (is.str(element)) {
+  if (isStr(element)) {
     const QD = document.querySelector(element);
     if (QD) return new Elem<T>(QD as T, element);
     return undefined;
@@ -709,7 +736,6 @@ function dom_trig(k: string, x: string, dx: Elem, yy: any): boolean {
     let ndm = new idm(mid);
     const NMP: VMapper = new Mapper();
     const [actxx, _] = _CTX(dm, NMP, ndm);
-
     if (_adm !== actxx) {
       XMAP.get(k)!.get(x)![1] = actxx;
       NMP.size && upMAP(NMP);
@@ -757,8 +783,8 @@ function trigger(by: string, affectChildren = false, noDom = true) {
                   break;
                 case "on":
                   XMAP.get(key)?.delete(x);
-                  O.items(y).forEach(([kk, vv]) => {
-                    if (is.fn(vv)) {
+                  oItems(y).forEach(([kk, vv]) => {
+                    if (isFN(vv)) {
                       let xvv = vv as (e?: HTMLElement | undefined) => void;
                       if (kk === "ready") {
                         vv.apply(D);
@@ -767,10 +793,9 @@ function trigger(by: string, affectChildren = false, noDom = true) {
                       ) {
                         WinSTATE.set(key, { [kk]: xvv });
                       } else if (kk === "watch") {
-                        // const vvd = vv(D) as WTC | WTC[];
                         const vvd = vv.apply(D) as WTC | WTC[];
                         if (vvd) {
-                          let fvvd = is.arr(vvd) ? vvd : [vvd];
+                          let fvvd = isArr(vvd) ? vvd : [vvd];
                           fvvd.length && WaSTATE.set(key, fvvd as any);
                         }
                       } else {
@@ -783,17 +808,17 @@ function trigger(by: string, affectChildren = false, noDom = true) {
                   break;
                 case "style":
                   const _stl: obj<V> = {};
-                  O.items(y).forEach(([kk, vv]) => {
+                  oItems(y).forEach(([kk, vv]) => {
                     const [nval, _nval] = vv as _MS;
                     const sval = nval(D) as any;
                     if (sval !== _nval) {
                       _stl[kk] = sval;
-                      O.ass(XMAP.get(key)?.get(x) ?? {}, {
+                      oAss(XMAP.get(key)?.get(x) ?? {}, {
                         [kk]: [nval, sval],
                       });
                     }
                   });
-                  O.length(_stl) && dx.style.set(_stl);
+                  oLen(_stl) && dx.style.set(_stl);
                   break;
                 default:
                   let [xy, _xy] = y as _MS;
@@ -826,7 +851,7 @@ function trigger(by: string, affectChildren = false, noDom = true) {
 const reValDom = (vx: any, affect: boolean) => {
   if (vx instanceof Dom && affect) {
     vx.component = false;
-  } else if (is.arr(vx)) {
+  } else if (isArr(vx)) {
     vx.forEach((vc) => {
       reValDom(vc, affect);
     });
@@ -835,8 +860,8 @@ const reValDom = (vx: any, affect: boolean) => {
 
 function __unChanged(val: any, nval: any): boolean {
   if (typeof nval == "object") {
-    if (is.arr(nval)) {
-      if (!is.obj(nval[0])) {
+    if (isArr(nval)) {
+      if (!isObj(nval[0])) {
         return nval.join("") === val.join("");
       }
     }
@@ -871,36 +896,24 @@ export class Render {
   }
   //   CLIENT
   async ctx(data = {}) {
-    let noscrp = `<noscript>You need to enable JavaScript to run this app.</noscript>`;
-    const _XRT = $(document.body);
-    const id = _XRT.id;
-    if (id) {
-      const _id = new idm(id + "_0");
-      const TA = await this.app(data);
-      const XDM = is.arr(TA) ? TA : [TA];
-      XDM.reverse().forEach((ts: Dom) => {
-        const its = ts.__(_id);
-        XMAP.map(its.attr);
-        _XRT.appendfirst = its.ctx;
-      });
-      _XRT.appendfirst = noscrp;
-      trigger("render");
-      windowState();
-    }
+    await this.dom(data, true);
   }
-  async dom(data = {}) {
+  async dom(data = {}, isCTX: boolean = false) {
     let noscrp = `<noscript>You need to enable JavaScript to run this app.</noscript>`;
     const _XRT = $(document.body);
     const id = _XRT.id;
     if (id) {
       const _id = new idm(id + "_0");
       const TA = await this.app(data);
-      const XDM = is.arr(TA) ? TA : [TA];
+      const XDM = isArr(TA) ? TA : [TA];
+      if (isCTX) _XRT.inner = "";
       XDM.reverse().forEach((ts: Dom) => {
         const its = ts.__(_id);
         XMAP.map(its.attr);
+        if (isCTX) _XRT.appendfirst = its.ctx;
       });
       _XRT.appendfirst = noscrp;
+
       trigger("render");
       windowState();
     }
@@ -908,10 +921,10 @@ export class Render {
   //   SSR
   async ssr(data = {}) {
     const TT = await this.app(data);
-    const id = make.ID(5);
+    const id = makeID(5);
     const CTX = TT.__(new idm(id + "_0"));
     return {
-      script: `<script type="module">import x from "./${this.path}";x.dom(${str.ngify(data)});</script>`,
+      script: `<script type="module">import x from "./${this.path}";x.dom(${ngify(data)});</script>`,
       body: `<body id="${id}">${CTX.ctx}</body>`,
     };
   }
@@ -926,20 +939,20 @@ function _ATTR(
 ) {
   const [k, v] = attr;
   let style = k === "style";
-  if (is.fn(v)) {
+  if (isFN(v)) {
     const vt = v();
     _ATTR([k, vt], attMap, doMap);
     doMap.set(k, [v, vt]);
-  } else if (is.dict(v)) {
+  } else if (isDict(v)) {
     if (style) {
-      const svt = O.items(v)
+      const svt = oItems(v)
         .map(([ss, vv]) => {
-          const xss = str.camel(ss);
+          const xss = reCamel(ss);
           let _vv = vv;
-          if (is.fn(vv)) {
+          if (isFN(vv)) {
             _vv = vv();
             if (!doMap.has("style")) doMap.set("style", {});
-            O.ass(doMap.get("style")!, { [xss]: [vv, _vv] });
+            oAss(doMap.get("style")!, { [xss]: [vv, _vv] });
           }
           return `${xss}:${_vv}`;
         })
@@ -949,10 +962,10 @@ function _ATTR(
       doMap.set(k, v);
     }
   } else {
-    const _val = (is.arr(v) ? v.flat() : [v]).filter((s) => s !== undefined);
+    const _val = (isArr(v) ? v.flat() : [v]).filter((s) => s !== undefined);
     attMap.set(
       k,
-      _val.map((s) => (is.bool(s) ? (s ? "" : "false") : String(s))).join(" "),
+      _val.map((s) => (isBool(s) ? (s ? "" : "false") : String(s))).join(" "),
     );
   }
 }
@@ -961,7 +974,7 @@ function _CTX(
   faMap: VMapper,
   pid: idm = new idm(),
 ): [string, boolean, boolean] {
-  let _xval = is.arr(ct) ? ct : [ct];
+  let _xval = isArr(ct) ? ct : [ct];
   let component = true;
   let isDom = false;
   const C = _xval.map((e) => {
@@ -971,7 +984,7 @@ function _CTX(
       const ed = e.__(pid);
       faMap.map(ed.attr);
       return ed.ctx;
-    } else if (is.obj(e)) {
+    } else if (isObj(e)) {
       return JSON.stringify(e);
     } else {
       return String(e === undefined ? "" : e);
@@ -996,7 +1009,7 @@ export class Dom {
     const faMap: VMapper = new Mapper();
     //
     if (this._attr) {
-      O.items(this._attr).forEach((k) => {
+      oItems(this._attr).forEach((k) => {
         _ATTR(k, attMap, doMap);
       });
     }
@@ -1004,7 +1017,7 @@ export class Dom {
     const x_len = this._ctx.length;
     const conMAP: ((e?: Element) => S | ctx)[] = [];
     this._ctx.forEach((ct) => {
-      if (is.fn(ct)) {
+      if (isFN(ct)) {
         if (x_len > 1) {
           const [_cc] = _CTX(dom("div", {}, ct), faMap, pid);
           _ctx.push(_cc);
@@ -1064,7 +1077,7 @@ export function dom(
     __ = attr.__;
     delete attr.__;
   }
-  if (is.fn(tag)) {
+  if (isFN(tag)) {
     return tag(__ ? { ...attr, __ } : __, ...ctx);
   } else {
     return new Dom(tag, attr, ctx);
@@ -1105,7 +1118,7 @@ export const { eventStream, local, session } = (function () {
     }
     on(event: obj<(a: MessageEvent) => void>) {
       const strm = this.stream;
-      O.items(event).forEach(([kk, vv]) => {
+      oItems(event).forEach(([kk, vv]) => {
         if (kk in eventListener[this.url]) {
           eventListener[this.url][kk].forEach((lt) => {
             this.stream.removeEventListener(kk, lt);
@@ -1173,7 +1186,7 @@ export const { eventStream, local, session } = (function () {
       _type: "local" | "session" = "local",
     ) {
       if (typeof item == "object") {
-        const [k, v] = O.items(item)[0];
+        const [k, v] = oItems(item)[0];
         this.key = k;
         this.func = v;
       } else {
@@ -1322,7 +1335,7 @@ const For = (
       if (Array.isArray(de)) {
         RTS.push(...de.map(k));
       } else if (typeof de == "object") {
-        RTS.push(...O.keys(de).map(k));
+        RTS.push(...oKeys(de).map(k));
       }
     } else {
       RTS.push(k);
@@ -1364,7 +1377,7 @@ export class __ {
     return str;
   }
   static _attr(x: attr, ...xclude: string[]) {
-    return O.items(x).reduce<any>((dc, [k, v]) => {
+    return oItems(x).reduce<any>((dc, [k, v]) => {
       if (!xclude.includes(k)) dc[k] = v;
       return dc;
     }, {});
@@ -1377,9 +1390,9 @@ export class __ {
   ) {
     const _x = __._attr(x, ...vals);
 
-    if (O.length(_styles)) {
+    if (oLen(_styles)) {
       !_x.style && (_x.style = {});
-      O.ass(_x.style, _styles);
+      oAss(_x.style, _styles);
     }
 
     _classes && _classes.length && (_x.class = this._class(x, _classes));
@@ -1490,7 +1503,7 @@ export class __ {
     return lit_type;
   }
   static _px(itm: obj<number>) {
-    return O.items(itm).reduce<obj<string>>((pr, [k, v]) => {
+    return oItems(itm).reduce<obj<string>>((pr, [k, v]) => {
       pr[k] = typeof v == "number" ? v + "px" : v;
       return pr;
     }, {});
@@ -1641,7 +1654,7 @@ class rS4t {
   ) {
     const bp = this.basePath;
     this.push(path);
-    if (is.fn(file)) {
+    if (isFN(file)) {
       this.maps[path] = { js: file, title };
     } else {
       const ult = this.pathname + (bp ? bp + file : file);
@@ -1694,6 +1707,7 @@ export class Router {
         df(this.isSheet && indx == 0 ? true : false);
       });
     };
+
     $(`[${attr}]`)?.all.forEach((cf) => {
       const CG = cf.attr.has("nav");
       if (!CG) {
@@ -1713,40 +1727,34 @@ export class Router {
     this._title(TTLE);
     this.init(this.e);
     if (!this.isSheet) {
-      const cURL = window.location.pathname;
+      const cURL = location.pathname;
       if (cURL !== nip) {
         this.pushState && history.pushState({}, TTLE, nip);
       }
       !iswc && this.e && this.e.scrollTo({ top: np.sT, behavior: "instant" });
     }
   }
-  private import(np: view, nip: string, iswc = false) {
+  private async import(np: view, nip: string, iswc = false) {
     const IMP = async (njs: () => Dom | Promise<Dom>) => {
       this._page(await njs());
       this.afterImp(np, document.title, nip);
     };
     //
-    if (is.str(np.js)) {
-      import(np.js)
-        .then(async (e) => {
-          if ("default" in e) {
-            this._page(
-              await e.default({
-                ...(iswc && { url: nip }),
-              }),
-            );
-            const TTLE = e.TITLE ?? document.title;
-            !this.isSheet && (document.title = TTLE);
-            this.afterImp(np, TTLE, nip);
-          } else {
-            this._page(
-              dom("div", undefined, "error: js has no export defaults."),
-            );
-          }
-        })
-        .catch((e) => {
-          this._page(dom("div", undefined, "Page not found..."));
-        });
+    if (isStr(np.js)) {
+      const IMP = await import((location.pathname ? "" : ".") + np.js);
+      if ("default" in IMP) {
+        this._page(
+          await IMP.default({
+            ...(iswc && { url: nip }),
+          }),
+        );
+
+        const TTLE = np.title ?? document.title;
+        !this.isSheet && (document.title = TTLE);
+        this.afterImp(np, TTLE, nip);
+      } else {
+        this._page(dom("div", undefined, "error: js has no export defaults."));
+      }
     } else {
       IMP(np.js);
     }
@@ -1774,11 +1782,10 @@ export class Router {
       this._nav(url);
       !this.isSheet && $(`[${this.attr}]`)?.all.forEach((cf) => SLC(cf, url));
       //
-      this.import(this.map.maps[_url], url, iswc);
+      await this.import(this.map.maps[_url], url, iswc);
     } else {
       this._page(dom("div", undefined, `"${url}" - not found...`));
     }
-
     return this;
   }
   path(

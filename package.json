@@ -4,20 +4,20 @@
   "description": "front end client",
   "author": "markjotep",
   "license": "MIT",
-  "main": "index.js",
-  "types": "index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./index.d.ts",
-      "import": "./index.js"
-    }
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "link__": "mkdir -p ./src/core; ln -sf ../../../_misc/@.ts ./src/core; ln -sf ../_misc/tsconfig.json ./",
+    "build": "tsc && bun build ./src/index.ts --outdir ./dist --minify --packages external --target bun && rollup -c ./util/rollup.config.js"
   },
   "keywords": [
     "hellmo",
     "js",
     "bun"
   ],
-  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MARKjotep/hellmo.git"
