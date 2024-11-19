@@ -1,5 +1,14 @@
 import { str, make, O, is } from "../_misc/__";
 
+export class $$ {
+  static set p(a: any) {
+    if (is.arr(a)) {
+      console.log(...a);
+    } else {
+      console.log(a);
+    }
+  }
+}
 /*
 -------------------------
 
@@ -31,7 +40,7 @@ type _events = {
     e: GlobalEventHandlersEventMap[P],
   ) => void;
 };
-type events = _events & c_events;
+
 //
 
 interface Battr {
@@ -41,7 +50,6 @@ interface Battr {
   style?: CSSinT | obj<STYLE>;
   on?: events;
 }
-type attr = obj<S> | Battr;
 
 type TElem = HTMLElement & InstanceType<typeof Element>;
 
@@ -170,8 +178,9 @@ class Eget<T extends TElem = HTMLElement> {
       },
       set: (attrs: obj<any>): Eget => {
         for (const ats in attrs) {
+          let aat = attrs[ats];
           if (attrs[ats] !== undefined) {
-            lat.setAttribute(ats, attrs[ats]);
+            lat.setAttribute(ats, aat ? aat : "");
           }
         }
         return this;
@@ -629,6 +638,7 @@ function dom_trig(k: string, x: string, dx: Elem, yy: any): boolean {
     let ndm = new idm(mid);
     const NMP: VMapper = new Mapper();
     const [actxx, _] = _CTX(dm, NMP, ndm);
+
     if (_adm !== actxx) {
       XMAP.get(k)!.get(x)![1] = actxx;
       NMP.size && upMAP(NMP);
@@ -874,7 +884,7 @@ function _CTX(
   return [KV, component];
 }
 
-class Dom {
+export class Dom {
   component: boolean = true;
   constructor(
     public tag: string,
@@ -1399,11 +1409,6 @@ export class __ {
   }
 }
 
-interface view {
-  js: string;
-  sT?: number;
-}
-
 /**
  *
  * string | number | uuid
@@ -1441,40 +1446,30 @@ function matchWC(str: string, fndr: string) {
   }
 }
 
+interface view {
+  js: string | (() => Dom | Promise<Dom>);
+  title: string;
+  sT?: number;
+}
+
 const pathname = location.pathname.slice(0, -1);
 class rS4t {
   maps: obj<view> = {};
   wild: string[] = [];
-  constructor(
-    private map: obj<string>,
-    private basePath?: string,
-  ) {
-    this.init();
-    this.wc();
-  }
-  private init() {
-    const bp = this.basePath;
-    this.maps = O.items(this.map).reduce<obj<view>>((dc, [k, v]) => {
-      const ult = pathname + (bp ? bp + v : v);
-      dc[k] = { js: ult.replaceAll("//", "/") };
-      return dc;
-    }, {});
-  }
-  private wc() {
+  constructor(private basePath?: string) {}
+  private push(path: string) {
     const wc = ["string", "number", "uuid"];
-    O.keys(this.map).forEach((mp) => {
-      const { parsed, wcard } = __._parseURL(mp);
-      if (wcard.length) {
-        this.wild.push(mp);
-      } else {
-        for (let i = 0; i < parsed.length; i++) {
-          if (wc.includes(parsed[i])) {
-            this.wild.push(mp);
-            break;
-          }
+    const { parsed, wcard } = __._parseURL(path);
+    if (wcard.length) {
+      this.wild.push(path);
+    } else {
+      for (let i = 0; i < parsed.length; i++) {
+        if (wc.includes(parsed[i])) {
+          this.wild.push(path);
+          break;
         }
       }
-    });
+    }
   }
   private match(url: string) {
     const WURL = this.wild;
@@ -1536,15 +1531,31 @@ class rS4t {
     return upcount == parsed.length ? wcmatchd : smatch;
   }
   url(url: string): [string, boolean] {
-    if (url in this.map) {
+    if (url in this.maps) {
       return [url, false];
     } else {
       const wnv = this.match(url);
-      if (wnv && wnv in this.map) {
+      if (wnv && wnv in this.maps) {
         return [wnv, true];
       }
     }
     return ["", false];
+  }
+  path(
+    path: string,
+    {
+      file,
+      title = "",
+    }: { file: string | (() => Dom | Promise<Dom>); title?: string },
+  ) {
+    const bp = this.basePath;
+    this.push(path);
+    if (is.fn(file)) {
+      this.maps[path] = { js: file, title };
+    } else {
+      const ult = pathname + (bp ? bp + file : file);
+      this.maps[path] = { js: ult.replaceAll("//", "/"), title };
+    }
   }
 }
 
@@ -1563,7 +1574,6 @@ export class Router {
   title: () => string;
   private e?: HTMLElement;
   constructor(
-    map: obj<string>,
     r: {
       pushState?: boolean;
       basePath?: string;
@@ -1577,15 +1587,13 @@ export class Router {
     this.isSheet = r.isSheet ?? false;
     this.attr = r.isSheet ? "surl" : "url";
     //
-    this.map = new rS4t(map, r.basePath);
+    this.map = new rS4t(r.basePath);
   }
-
   init(eh?: HTMLElement, ...dsmissed: ((a: any) => void)[]) {
     this.e = eh;
     const nav = this.nav;
     const $nav = this._nav;
     const attr = this.attr;
-
     const STR = (xid: string, last?: string) => {
       if (xid !== last) {
         this.get(xid, last);
@@ -1596,51 +1604,62 @@ export class Router {
       });
     };
     $(`[${attr}]`)?.all.forEach((cf) => {
-      cf.on("click", function (this: HTMLElement, e: MouseEvent) {
-        e.preventDefault();
-        const _E = $(this),
-          xid = _E.attr.get(attr);
-        if (xid) STR(xid, nav());
-      });
+      const CG = cf.attr.has("nav");
+      if (!CG) {
+        cf.attr.set({ nav: null });
+        cf.on("click", function (this: HTMLElement, e: MouseEvent) {
+          e.preventDefault();
+          const _E = $(this),
+            xid = _E.attr.get(attr);
+          if (xid) STR(xid, nav());
+        });
+      }
     });
 
     return this;
   }
-
-  private import(np: view, nip: string, iswc = false) {
-    //
-
-    import(np.js)
-      .then(async (e) => {
-        if ("default" in e) {
-          this._page(
-            await e.default({
-              ...(iswc && { url: nip }),
-            }),
-          );
-          const TTLE = e.TITLE ?? document.title;
-          !this.isSheet && (document.title = TTLE);
-          this._title(TTLE);
-          //
-          this.init(this.e);
-          if (e.TITLE && !this.isSheet) {
-            const cURL = window.location.pathname;
-            if (cURL !== nip) {
-              this.pushState && history.pushState({}, TTLE, nip);
-            }
-            !iswc &&
-              this.e &&
-              this.e.scrollTo({ top: np.sT, behavior: "instant" });
-          }
-        } else {
-          this._page(dom("div", undefined, "error: js has no export default."));
-        }
-      })
-      .catch((e) => {
-        this._page(dom("div", undefined, "Page not found..."));
-      });
+  private afterImp(np: view, TTLE: string, nip: string, iswc = false) {
+    this._title(TTLE);
+    this.init(this.e);
+    if (!this.isSheet) {
+      const cURL = window.location.pathname;
+      if (cURL !== nip) {
+        this.pushState && history.pushState({}, TTLE, nip);
+      }
+      !iswc && this.e && this.e.scrollTo({ top: np.sT, behavior: "instant" });
+    }
   }
-
+  private import(np: view, nip: string, iswc = false) {
+    const IMP = async (njs: () => Dom | Promise<Dom>) => {
+      this._page(await njs());
+      this.afterImp(np, document.title, nip);
+    };
+    //
+    if (is.str(np.js)) {
+      import(np.js)
+        .then(async (e) => {
+          if ("default" in e) {
+            this._page(
+              await e.default({
+                ...(iswc && { url: nip }),
+              }),
+            );
+            const TTLE = e.TITLE ?? document.title;
+            !this.isSheet && (document.title = TTLE);
+            this.afterImp(np, TTLE, nip);
+          } else {
+            this._page(
+              dom("div", undefined, "error: js has no export defaults."),
+            );
+          }
+        })
+        .catch((e) => {
+          this._page(dom("div", undefined, "Page not found..."));
+        });
+    } else {
+      IMP(np.js);
+    }
+  }
   sheet(url: string) {
     const [_url, iswc] = this.map.url(url);
     if (_url) {
@@ -1651,7 +1670,6 @@ export class Router {
   reset() {
     this._page(dom("div", undefined, ""));
   }
-
   async get(url: string, lastURL?: string) {
     if (lastURL) {
       const [_lasturl, _] = this.map.url(lastURL);
@@ -1671,5 +1689,210 @@ export class Router {
     }
 
     return this;
+  }
+  path(
+    path: string,
+    {
+      file,
+      title = "",
+    }: { file: string | (() => Dom | Promise<Dom>); title?: string },
+  ) {
+    this.map.path(path, { file, title });
+    //
+    return this;
+  }
+}
+
+/*
+-------------------------
+
+-------------------------
+*/
+
+declare global {
+  type events = _events & c_events;
+  type attr = obj<S> | Battr;
+  namespace JSX {
+    type Element = Dom;
+    interface IntrinsicElements {
+      // Basic ----------------------------------
+      p: attr;
+      br: attr;
+      hr: attr;
+      h: attr;
+      cmnt: attr;
+      root: attr;
+      // Styles and Semantics ----------------------------------
+      html: attr;
+      body: attr;
+      div: attr;
+      span: attr;
+      header: attr;
+      hgroup: attr;
+      footer: attr;
+      main: attr;
+      section: attr;
+      search: attr;
+      article: attr;
+      aside: attr;
+      details: attr;
+      dialog: attr;
+      summary: attr;
+      data: attr;
+      // Programming ----------------------------------
+      noscript: attr;
+      object: attr;
+      param: attr;
+      script: attr;
+      // Links ----------------------------------
+      a: attr;
+      nav: attr;
+      style: attr;
+      // Audio / Video ----------------------------------
+      audio: attr;
+      video: attr;
+      source: attr;
+      track: attr;
+      // Images ----------------------------------
+      img: attr;
+      map: attr;
+      area: attr;
+      canvas: attr;
+      figcaption: attr;
+      figure: attr;
+      picture: attr;
+      // IFrame ----------------------------------
+      iframe: attr;
+      // Forms and Input ----------------------------------
+      form: attr;
+      input: attr;
+      textarea: attr;
+      button: attr;
+      select: attr;
+      optgroup: attr;
+      option: attr;
+      label: attr;
+      fieldset: attr;
+      legend: attr;
+      datalist: attr;
+      // Tables ----------------------------------
+      table: attr;
+      caption: attr;
+      th: attr;
+      tr: attr;
+      td: attr;
+      thead: attr;
+      tbody: attr;
+      tfoot: attr;
+      col: attr;
+      colgroup: attr;
+      // Formatting ----------------------------------
+
+      b: attr;
+      i: attr;
+      q: attr;
+      s: attr;
+      u: attr;
+      em: attr;
+      rp: attr;
+      del: attr;
+      dfn: attr;
+      ins: attr;
+      kbd: attr;
+      pre: attr;
+      sub: attr;
+      sup: attr;
+      var: attr;
+      wbr: attr;
+      cite: attr;
+      time: attr;
+      abbr: attr;
+      code: attr;
+      mark: attr;
+      samp: attr;
+      meter: attr;
+      small: attr;
+      strong: attr;
+      address: attr;
+      progress: attr;
+      template: attr;
+      blockquote: attr;
+      // List ----------------------------------
+      menu: attr;
+      ul: attr;
+      ol: attr;
+      li: attr;
+      dl: attr;
+      dt: attr;
+      dd: attr;
+
+      h1: attr;
+      h2: attr;
+      h3: attr;
+      h4: attr;
+      h5: attr;
+      h6: attr;
+
+      // SVG Elements  ----------------------------------
+      svg: attr;
+      path: attr;
+      circle: attr;
+      animate: attr;
+      animateMotion: attr;
+      animateTransform: attr;
+      clipPath: attr;
+      defs: attr;
+      desc: attr;
+      ellipse: attr;
+      feBlend: attr;
+      feColorMatrix: attr;
+      feComponentTransfer: attr;
+      feComposite: attr;
+      feConvolveMatrix: attr;
+      feDiffuseLighting: attr;
+      feDisplacementMap: attr;
+      feDistantLight: attr;
+      feDropShadow: attr;
+      feFlood: attr;
+      feFuncA: attr;
+      feFuncB: attr;
+      feFuncG: attr;
+      feFuncR: attr;
+      feGaussianBlur: attr;
+      feImage: attr;
+      feMerge: attr;
+      feMergeNode: attr;
+      feMorphology: attr;
+      feOffset: attr;
+      fePointLight: attr;
+      feSpecularLighting: attr;
+      feSpotLight: attr;
+      feTile: attr;
+      feTurbulence: attr;
+      filter: attr;
+      foreignObject: attr;
+      g: attr;
+      image: attr;
+      line: attr;
+      linearGradient: attr;
+      marker: attr;
+      mask: attr;
+      metadata: attr;
+      mpath: attr;
+      pattern: attr;
+      polygon: attr;
+      polyline: attr;
+      radialGradient: attr;
+      rect: attr;
+      set: attr;
+      stop: attr;
+      symbol: attr;
+      text: attr;
+      textPath: attr;
+      title: attr;
+      tspan: attr;
+      use: attr;
+      view: attr;
+    }
   }
 }
