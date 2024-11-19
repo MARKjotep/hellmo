@@ -1,5 +1,124 @@
 import { str, make, O, is } from "../_misc/__";
 
+type V = string | number | boolean;
+type S = string | string[] | ((e?: Element) => S) | boolean;
+type DV = V | Dom;
+interface obj<T> {
+  [Key: string]: T;
+}
+
+type meta<T> = {
+  charset?: T;
+  content?: T;
+  "http-equiv"?: T;
+  name?: T;
+  media?: T;
+  url?: T;
+};
+type link<T> = {
+  href?: T;
+  hreflang?: T;
+  media?: T;
+  referrerpolicy?: T;
+  rel?: "stylesheet" | "icon" | "manifest" | T;
+  sizes?: T;
+  title?: T;
+  type?: T;
+  as?: T;
+};
+type impmap = {
+  imports?: obj<string>;
+  scopes?: obj<string>;
+  integrity?: obj<string>;
+};
+type script<T> = {
+  async?: T;
+  crossorigin?: T;
+  defer?: T;
+  integrity?: T;
+  nomodule?: T;
+  referrerpolicy?: T;
+  src?: T;
+  type?: "text/javascript" | T;
+  id?: T;
+  importmap?: impmap;
+  body?: T;
+};
+type base = {
+  href?: string;
+  target?: "_blank" | "_parent" | "_self" | "_top";
+};
+export interface headP {
+  title?: string;
+  base?: base[];
+  meta?: meta<V>[];
+  link?: link<V>[];
+  script?: script<V>[];
+}
+type ctx = DV | DV[] | (() => DV | DV[]);
+
+type TElem = HTMLElement & InstanceType<typeof Element>;
+type Elements = HTMLElementTagNameMap[keyof HTMLElementTagNameMap];
+type STYLE = V | (<T extends TElem = HTMLElement>(e: T) => V);
+export type CSSinT = {
+  [P in keyof CSSStyleDeclaration]?: STYLE;
+};
+interface c_events {
+  ready?: (this: Elements) => void;
+  watch?: (this: Elements) => Watcher<any> | Watcher<any>[];
+  resize?: (this: HTMLElement, e: UIEvent) => void;
+  unload?: (this: HTMLElement, e: BeforeUnloadEvent) => void;
+  popstate?: (this: HTMLElement, e: PopStateEvent) => void;
+}
+type _MS = [(e?: Element) => S | ctx, any];
+type MS2 = obj<_MS>;
+type _events = {
+  [P in keyof GlobalEventHandlersEventMap]?: (
+    e: GlobalEventHandlersEventMap[P],
+  ) => void;
+};
+type events = _events & c_events;
+interface Battr {
+  [key: string]: any;
+  id?: string;
+  class?: S;
+  style?: CSSinT | obj<STYLE>;
+  on?: events;
+}
+type attr = obj<S> | Battr;
+/*
+-------------------------
+
+-------------------------
+*/
+
+export const gen8 = {
+  numSequence: (length: number) => Array.from({ length }, (_, ind) => ind),
+};
+
+const TAGS = [
+  "area",
+  "base",
+  "br",
+  "col",
+  "command",
+  "embed",
+  "hr",
+  "img",
+  "input",
+  "keygen",
+  "link",
+  "meta",
+  "param",
+  "source",
+  "track",
+  "wbr",
+];
+
+const has = {
+  tag: (tag: string) => TAGS.includes(tag),
+};
+
 export class $$ {
   static set p(a: any) {
     if (is.arr(a)) {
@@ -9,56 +128,92 @@ export class $$ {
     }
   }
 }
+
+class idm {
+  _c = 0;
+  private id = "";
+  constructor(mid?: string) {
+    this._c = 0;
+    this.id = mid ?? make.ID(5);
+    if (mid && mid.includes("_")) {
+      const sa = mid.split("_");
+      const lstr = sa.slice(-1).toString();
+      const nm = is.number(lstr);
+      this.id = sa.slice(0, -1).join("_");
+      this._c = nm ? parseInt(lstr) : 0;
+    }
+  }
+  get mid() {
+    return this.id + "_" + ++this._c;
+  }
+}
+
+class Mapper<K, V> extends Map<K, V> {
+  obj(obj?: object | null) {
+    obj && O.items(obj).forEach(([k, v]) => this.set(k as K, v));
+  }
+  map(map: Map<K, V>) {
+    map.forEach((v, k) => {
+      this.set(k, v);
+    });
+  }
+}
+export class Watcher<T> {
+  private val: T;
+  private _do: ((arg: T) => void)[] = [];
+  constructor(public watching: () => T) {
+    this.val = watching();
+  }
+  on(changed: (arg: T) => void, init: boolean = true) {
+    this._do.push(changed);
+    if (init) changed(this.val);
+    return this;
+  }
+  get update() {
+    const NV = this.watching();
+    if (this.val !== NV) {
+      this.val = NV;
+      this._do.forEach((dd) => {
+        dd(NV);
+      });
+    }
+    return;
+  }
+}
+
+/*
+-------------------------
+ESCAPE
+-------------------------
+*/
+if (typeof window === "undefined") {
+  Object.assign(global, {
+    window: {},
+    document: {},
+    location: {},
+    localStorage: {},
+    sessionStorage: {},
+    navigator: {},
+    history: {},
+    screen: {},
+    performance: {},
+  });
+}
+
 /*
 -------------------------
 
 -------------------------
 */
-interface obj<T> {
-  [Key: string]: T;
-}
-type S = string | string[] | ((e?: Element) => S) | boolean;
-type V = string | number | boolean;
-type DV = V | Dom;
-type ctx = DV | DV[] | (() => DV | DV[]);
-type _MS = [(e?: Element) => S | ctx, any];
-type MS2 = obj<_MS>;
-type VMapper = Mapper<string, Mapper<string, MS2 | _MS>>;
+
+/*
+-------------------------
+
+-------------------------
+*/
+
 type WTC = [(...e: any) => void, (e?: any) => any, true?];
-
-type Elements = HTMLElementTagNameMap[keyof HTMLElementTagNameMap];
-interface c_events {
-  ready?: (this: Elements) => void;
-  watch?: (this: Elements) => Watcher<any> | Watcher<any>[];
-  resize?: (this: HTMLElement, e: UIEvent) => void;
-  unload?: (this: HTMLElement, e: BeforeUnloadEvent) => void;
-  popstate?: (this: HTMLElement, e: PopStateEvent) => void;
-}
-
-type _events = {
-  [P in keyof GlobalEventHandlersEventMap]?: (
-    e: GlobalEventHandlersEventMap[P],
-  ) => void;
-};
-
-//
-
-interface Battr {
-  [key: string]: any;
-  id?: string;
-  class?: S;
-  style?: CSSinT | obj<STYLE>;
-  on?: events;
-}
-
-type TElem = HTMLElement & InstanceType<typeof Element>;
-
-type STYLE = V | (<T extends TElem = HTMLElement>(e: T) => V);
-export type CSSinT = {
-  [P in keyof CSSStyleDeclaration]?: STYLE;
-};
 type kf = KeyframeAnimationOptions;
-
 type KFType = (CSSinT | obj<V>)[] | CSSinT | obj<V>;
 type fn<E, T> = (e?: E) => T;
 /*
@@ -66,6 +221,16 @@ type fn<E, T> = (e?: E) => T;
 
 -------------------------
 */
+
+function upMAP(NMP: VMapper) {
+  NMP.size &&
+    NMP.keys().forEach((fc) => {
+      XMAP.delete(fc);
+      WaSTATE.delete(fc);
+      WinSTATE.delete(fc);
+    });
+  XMAP.map(NMP);
+}
 
 class anim {
   opt: kf;
@@ -480,98 +645,12 @@ export function $<T extends TElem = HTMLElement>(element: T | string) {
 -------------------------
 */
 
-class Mapper<K, V> extends Map<K, V> {
-  obj(obj?: object | null) {
-    obj && O.items(obj).forEach(([k, v]) => this.set(k as K, v));
-  }
-  map(map: Map<K, V>) {
-    map.forEach((v, k) => {
-      this.set(k, v);
-    });
-  }
-}
-class idm {
-  private _c = 0;
-  private id = "";
-  constructor(mid?: string) {
-    this._c = 0;
-    this.id = mid ?? make.ID(5);
-    if (mid && mid.indexOf("_") > 1) {
-      const [xid, xin] = mid.split("_");
-      this.id = xid;
-      this._c = parseInt(xin);
-    }
-  }
-  get mid() {
-    return this.id + "_" + ++this._c;
-  }
-}
-export class Watcher<T> {
-  private val: T;
-  private _do: ((arg: T) => void)[] = [];
-  constructor(public watching: () => T) {
-    this.val = watching();
-  }
-  on(changed: (arg: T) => void, init: boolean = true) {
-    this._do.push(changed);
-    if (init) changed(this.val);
-    return this;
-  }
-  get update() {
-    const NV = this.watching();
-    if (this.val !== NV) {
-      this.val = NV;
-      this._do.forEach((dd) => {
-        dd(NV);
-      });
-    }
-    return;
-  }
-}
-
-const TAGS = [
-  "area",
-  "base",
-  "br",
-  "col",
-  "command",
-  "embed",
-  "hr",
-  "img",
-  "input",
-  "keygen",
-  "link",
-  "meta",
-  "param",
-  "source",
-  "track",
-  "wbr",
-];
-
-const has = {
-  tag: (tag: string) => TAGS.includes(tag),
-};
-
-/*
--------------------------
-
--------------------------
-*/
-
-/*
-  -------------------------
-  
-  -------------------------
-  */
-
 const XMAP: VMapper = new Mapper();
 const WinSTATE: Mapper<
   string,
   obj<(e?: HTMLElement, t?: EventTarget | null) => void>
 > = new Mapper();
 const WaSTATE: Mapper<string, Watcher<any>[]> = new Mapper();
-const _D = document;
-const _W = window;
 
 /*
 -------------------------
@@ -580,6 +659,8 @@ STATES
 */
 
 function windowState() {
+  const _W = window;
+  const _D = document;
   _W.addEventListener("resize", function (e: UIEvent) {
     WinSTATE.forEach((val, key) => {
       if (val.resize) {
@@ -620,16 +701,6 @@ function windowState() {
   // Maintain the scrollPosition in session
 }
 
-function upMAP(NMP: VMapper) {
-  NMP.size &&
-    NMP.keys().forEach((fc) => {
-      XMAP.delete(fc);
-      WaSTATE.delete(fc);
-      WinSTATE.delete(fc);
-    });
-  XMAP.map(NMP);
-}
-
 function dom_trig(k: string, x: string, dx: Elem, yy: any): boolean {
   const [adm, _adm] = yy as _MS;
   const dm = adm(dx.e) as any;
@@ -650,6 +721,7 @@ function dom_trig(k: string, x: string, dx: Elem, yy: any): boolean {
 }
 
 function trigger(by: string, affectChildren = false, noDom = true) {
+  const _D = document;
   if (XMAP.size) {
     for (const [key, val] of XMAP) {
       if (val.size) {
@@ -674,7 +746,7 @@ function trigger(by: string, affectChildren = false, noDom = true) {
                 case "ctx":
                   const [cxt, _ctx] = y as _MS;
                   const NMP: VMapper = new Mapper();
-                  const [ic] = _CTX(cxt(D!), NMP);
+                  const [ic] = _CTX(cxt(D!) as any, NMP);
                   if (_ctx != ic) {
                     dx.inner = ic;
                     NMP.size && upMAP(NMP);
@@ -790,8 +862,15 @@ export function state<T, O = obj<any>>(
 }
 
 export class Render {
-  constructor(public app: (data: any) => Dom | Promise<Dom>) {}
-  async dom(data = {}) {
+  path: string = "";
+  constructor(
+    public app: (data: any) => Dom | Promise<Dom>,
+    path?: string,
+  ) {
+    this.path = path ? path.replace(".tsx", ".js") : "";
+  }
+  //   CLIENT
+  async ctx(data = {}) {
     let noscrp = `<noscript>You need to enable JavaScript to run this app.</noscript>`;
     const _XRT = $(document.body);
     const id = _XRT.id;
@@ -805,85 +884,102 @@ export class Render {
         _XRT.appendfirst = its.ctx;
       });
       _XRT.appendfirst = noscrp;
-
       trigger("render");
       windowState();
     }
   }
+  async dom(data = {}) {
+    let noscrp = `<noscript>You need to enable JavaScript to run this app.</noscript>`;
+    const _XRT = $(document.body);
+    const id = _XRT.id;
+    if (id) {
+      const _id = new idm(id + "_0");
+      const TA = await this.app(data);
+      const XDM = is.arr(TA) ? TA : [TA];
+      XDM.reverse().forEach((ts: Dom) => {
+        const its = ts.__(_id);
+        XMAP.map(its.attr);
+      });
+      _XRT.appendfirst = noscrp;
+      trigger("render");
+      windowState();
+    }
+  }
+  //   SSR
+  async ssr(data = {}) {
+    const TT = await this.app(data);
+    const id = make.ID(5);
+    const CTX = TT.__(new idm(id + "_0"));
+    return {
+      script: `<script type="module">import x from "./${this.path}";x.dom(${str.ngify(data)});</script>`,
+      body: `<body id="${id}">${CTX.ctx}</body>`,
+    };
+  }
 }
 
-/*
--------------------------
-
--------------------------
-*/
-
+type VMapper = Mapper<string, Mapper<string, MS2 | _MS>>;
+type domMAP = Mapper<string, MS2 | _MS>;
 function _ATTR(
-  key: string,
-  val: any,
-  style = false,
-  atMap: Mapper<string, string>,
-  doMap: Mapper<string, MS2 | _MS>,
+  attr: [string, any],
+  attMap: Mapper<string, string>,
+  doMap: domMAP,
 ) {
-  if (is.fn(val)) {
-    const vt = val();
-    _ATTR(key, vt, style, atMap, doMap);
-    doMap.set(key, [val, vt]);
-  } else if (!is.arr(val) && is.obj(val)) {
+  const [k, v] = attr;
+  let style = k === "style";
+  if (is.fn(v)) {
+    const vt = v();
+    _ATTR([k, vt], attMap, doMap);
+    doMap.set(k, [v, vt]);
+  } else if (is.dict(v)) {
     if (style) {
-      const svt = O.items(val)
+      const svt = O.items(v)
         .map(([ss, vv]) => {
           const xss = str.camel(ss);
           let _vv = vv;
           if (is.fn(vv)) {
-            if (!doMap.has("style")) doMap.set("style", {});
             _vv = vv();
+            if (!doMap.has("style")) doMap.set("style", {});
             O.ass(doMap.get("style")!, { [xss]: [vv, _vv] });
           }
           return `${xss}:${_vv}`;
         })
         .join(";");
-
-      atMap.set("style", svt);
+      attMap.set("style", svt);
+    } else if (k === "on") {
+      doMap.set(k, v);
     }
   } else {
-    const _val = (is.arr(val) ? val.flat() : [val]).filter(
-      (s) => s !== undefined,
-    );
-    atMap.set(
-      key,
+    const _val = (is.arr(v) ? v.flat() : [v]).filter((s) => s !== undefined);
+    attMap.set(
+      k,
       _val.map((s) => (is.bool(s) ? (s ? "" : "false") : String(s))).join(" "),
     );
   }
 }
-
 function _CTX(
-  val: any,
-  f_fatt: VMapper,
+  ct: ctx,
+  faMap: VMapper,
   pid: idm = new idm(),
-  _ctx?: string[],
-): [string, boolean] {
-  let _xval = is.arr(val) ? val.flat() : [val];
+): [string, boolean, boolean] {
+  let _xval = is.arr(ct) ? ct : [ct];
   let component = true;
-  const KV = _xval
-    .map((e) => {
-      if (e instanceof Dom) {
-        component = e.component;
-        const ed = e.__(pid);
-        f_fatt.map(ed.attr);
-        return ed.ctx;
-      } else if (is.obj(e)) {
-        return JSON.stringify(e);
-      } else {
-        return String(e === undefined ? "" : e);
-      }
-    })
-    .join("");
-
-  _ctx?.push(KV);
-  return [KV, component];
+  let isDom = false;
+  const C = _xval.map((e) => {
+    if (e instanceof Dom) {
+      isDom = true;
+      component = e.component;
+      const ed = e.__(pid);
+      faMap.map(ed.attr);
+      return ed.ctx;
+    } else if (is.obj(e)) {
+      return JSON.stringify(e);
+    } else {
+      return String(e === undefined ? "" : e);
+    }
+  });
+  return [C.join(""), isDom, component];
 }
-
+//
 export class Dom {
   component: boolean = true;
   constructor(
@@ -894,47 +990,44 @@ export class Dom {
 
   __(pid: idm = new idm()) {
     let xid = pid.mid;
-    const doMap: Mapper<string, MS2 | _MS> = new Mapper();
+    const doMap: domMAP = new Mapper();
     const attMap: Mapper<string, string> = new Mapper();
-    const faMap: VMapper = new Mapper();
     const _ctx: string[] = [];
-
+    const faMap: VMapper = new Mapper();
+    //
     if (this._attr) {
-      O.items(this._attr).forEach(([k, v]) => {
-        if (k !== "__") {
-          if (k === "on") doMap.set(k, v);
-          else {
-            _ATTR(k, v, k === "style", attMap, doMap);
-          }
-        }
+      O.items(this._attr).forEach((k) => {
+        _ATTR(k, attMap, doMap);
       });
     }
 
     const x_len = this._ctx.length;
+    const conMAP: ((e?: Element) => S | ctx)[] = [];
     this._ctx.forEach((ct) => {
       if (is.fn(ct)) {
         if (x_len > 1) {
-          _CTX(dom("span", {}, ct), faMap, pid, _ctx);
+          const [_cc] = _CTX(dom("div", {}, ct), faMap, pid);
+          _ctx.push(_cc);
         } else {
           const vt = ct();
-          const ndx = new idm();
+          const ndx = new idm(xid + "_0");
           xid = ndx.mid;
-          //
-          if (vt instanceof Dom) {
-            const [dctx, isD] = _CTX(vt, faMap, ndx, _ctx);
-            doMap.set(isD ? "dom_ctx" : "dom", [ct, dctx]);
-          } else {
-            const [actx, isco] = _CTX(vt, faMap, ndx, _ctx);
-            doMap.set(faMap.size ? (isco ? "dom_ctx" : "dom") : "ctx", [
-              ct,
-              actx,
-            ]);
-          }
+          const [_cc, isDom, comp] = _CTX(vt, faMap, ndx);
+          let ccd = isDom ? (comp ? "dom_ctx" : "dom") : "ctx";
+          doMap.set(ccd, [ct, _cc]);
+          _ctx.push(_cc);
         }
       } else {
-        _CTX(ct, faMap, pid, _ctx);
+        const [_cc] = _CTX(ct, faMap, pid);
+        _ctx.push(_cc);
       }
     });
+
+    /*
+    -------------------------
+    
+    -------------------------
+    */
 
     if (doMap.size) {
       xid = attMap.get("id") ?? attMap.set("id", xid).get("id")!;
@@ -953,6 +1046,7 @@ export class Dom {
       if (_ctx.length) dname += _ctx.join("");
       dname += `</${name}>`;
     }
+
     return {
       ctx: dname,
       attr: faMap,
@@ -980,12 +1074,6 @@ export function dom(
 export function frag(r: any, ...d: ctx[]) {
   return d;
 }
-
-/*
--------------------------
-
--------------------------
-*/
 
 /*
 -------------------------
@@ -1452,11 +1540,14 @@ interface view {
   sT?: number;
 }
 
-const pathname = location.pathname.slice(0, -1);
 class rS4t {
   maps: obj<view> = {};
   wild: string[] = [];
-  constructor(private basePath?: string) {}
+  pathname: string;
+  constructor(private basePath?: string) {
+    this.pathname =
+      "pathname" in location ? location?.pathname.slice(0, -1) : "";
+  }
   private push(path: string) {
     const wc = ["string", "number", "uuid"];
     const { parsed, wcard } = __._parseURL(path);
@@ -1553,7 +1644,7 @@ class rS4t {
     if (is.fn(file)) {
       this.maps[path] = { js: file, title };
     } else {
-      const ult = pathname + (bp ? bp + file : file);
+      const ult = this.pathname + (bp ? bp + file : file);
       this.maps[path] = { js: ult.replaceAll("//", "/"), title };
     }
   }
