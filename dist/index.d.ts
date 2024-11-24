@@ -1,101 +1,49 @@
-type V = string | number | boolean;
-type S = string | string[] | ((e?: Element) => S) | boolean;
-type DV = V | Dom;
-interface obj<T> {
-    [Key: string]: T;
-}
-declare class $$ {
-    static set p(a: any);
-    static get isDark(): boolean;
-}
-type meta<T> = {
-    charset?: T;
-    content?: T;
-    "http-equiv"?: T;
-    name?: T;
-    media?: T;
-    url?: T;
-};
-type link<T> = {
-    href?: T;
-    hreflang?: T;
-    media?: T;
-    referrerpolicy?: T;
-    rel?: "stylesheet" | "icon" | "manifest" | T;
-    sizes?: T;
-    title?: T;
-    type?: T;
-    as?: T;
-};
-type impmap = {
-    imports?: obj<string>;
-    scopes?: obj<string>;
-    integrity?: obj<string>;
-};
-type script<T> = {
-    async?: T;
-    crossorigin?: T;
-    defer?: T;
-    integrity?: T;
-    nomodule?: T;
-    referrerpolicy?: T;
-    src?: T;
-    type?: "text/javascript" | T;
-    id?: T;
-    importmap?: impmap;
-    body?: T;
-};
-type base = {
-    href?: string;
-    target?: "_blank" | "_parent" | "_self" | "_top";
-};
-interface headP {
-    title?: string;
-    base?: base[];
-    meta?: meta<V>[];
-    link?: link<V>[];
-    script?: script<V>[];
-}
-type ctx = DV | DV[] | (() => DV | DV[]);
-type TElem = HTMLElement & InstanceType<typeof Element>;
-type Elements = HTMLElementTagNameMap[keyof HTMLElementTagNameMap];
-type STYLE = V | (<T extends TElem = HTMLElement>(e: T) => V);
-type CSSinT = {
-    [P in keyof CSSStyleDeclaration]?: STYLE;
-};
-interface c_events {
-    ready?: (this: Elements) => void;
-    watch?: (this: Elements) => Watcher<any> | Watcher<any>[];
-    resize?: (this: HTMLElement, e: UIEvent) => void;
-    unload?: (this: HTMLElement, e: BeforeUnloadEvent) => void;
-    popstate?: (this: HTMLElement, e: PopStateEvent) => void;
-}
-type _MS = [(e?: Element) => S | ctx, any];
-type MS2 = obj<_MS>;
-type _events = {
-    [P in keyof GlobalEventHandlersEventMap]?: (e: GlobalEventHandlersEventMap[P]) => void;
-};
-type events = _events & c_events;
-interface Battr {
-    [key: string]: any;
-    id?: string;
-    class?: S;
-    style?: CSSinT | obj<STYLE>;
-    on?: events;
-}
-type attr = obj<S> | Battr;
-declare const gen8: {
-    numSequence: (length: number) => number[];
-};
-declare class idm {
-    _c: number;
-    private id;
-    constructor(mid?: string);
-    get mid(): string;
-}
 declare class Mapper<K, V> extends Map<K, V> {
     obj(obj?: object | null): void;
     map(map: Map<K, V>): void;
+    ass<T>(key: K, obj: T): void;
+}
+interface obj<T> {
+    [Key: string]: T;
+}
+type V = string | number | boolean;
+
+type S$1 = string | string[] | ((e?: Element) => S$1) | boolean;
+type DV = V | Dom;
+type ctx = DV | DV[] | (() => DV | DV[]);
+type _MS = [(e?: Element) => S$1 | ctx, any];
+type MS2 = obj<_MS>;
+type VMapper = Mapper<string, Mapper<string, MS2 | _MS>>;
+declare class idm {
+    _c: number;
+    id: string;
+    constructor(mid?: string);
+    get mid(): string;
+}
+declare function state<T, O = obj<any>>(val: T, affectChildren?: boolean): [() => T, (newValue: T) => void, O];
+declare class Dom {
+    tag: string;
+    _attr?: attr | undefined;
+    _ctx: ctx[];
+    component: boolean;
+    constructor(tag: string, _attr?: attr | undefined, _ctx?: ctx[]);
+    __(pid?: idm): {
+        ctx: string;
+        attr: VMapper;
+    };
+}
+declare function dom(tag: string | ((attr?: attr, ...ctx: ctx[]) => Dom), attr?: attr, ...ctx: ctx[]): Dom;
+declare function frag(r: any, ...d: ctx[]): (DV | (() => DV | DV[]))[];
+declare class Render {
+    app: (data: any) => Dom | Promise<Dom>;
+    path: string;
+    constructor(app: (data: any) => Dom | Promise<Dom>, path?: string);
+    ctx(data?: {}): Promise<void>;
+    dom(data?: {}, isCTX?: boolean): Promise<void>;
+    ssr(data?: {}): Promise<{
+        script: string;
+        body: string;
+    }>;
 }
 declare class Watcher<T> {
     watching: () => T;
@@ -105,6 +53,12 @@ declare class Watcher<T> {
     on(changed: (arg: T) => void, init?: boolean): this;
     get update(): void;
 }
+
+type TElem = HTMLElement & InstanceType<typeof Element>;
+type STYLE = V | (<T extends TElem = HTMLElement>(e: T) => V);
+type CSSinT = {
+    [P in keyof CSSStyleDeclaration]?: STYLE;
+};
 type kf = KeyframeAnimationOptions;
 type KFType = (CSSinT | obj<V>)[] | CSSinT | obj<V>;
 type fn<E, T> = (e?: E) => T;
@@ -186,87 +140,7 @@ declare class Elem<T extends TElem = HTMLElement> extends Eget {
 }
 declare function $(query: string): Elem | undefined;
 declare function $<T extends TElem = HTMLElement>(element: T): Elem<T>;
-type _$ = Elem | undefined;
-declare function state<T, O = obj<any>>(val: T, affectChildren?: boolean): [() => T, (newValue: T) => void, O];
-declare class Render {
-    app: (data: any) => Dom | Promise<Dom>;
-    path: string;
-    constructor(app: (data: any) => Dom | Promise<Dom>, path?: string);
-    ctx(data?: {}): Promise<void>;
-    dom(data?: {}, isCTX?: boolean): Promise<void>;
-    ssr(data?: {}): Promise<{
-        script: string;
-        body: string;
-    }>;
-}
-type VMapper = Mapper<string, Mapper<string, MS2 | _MS>>;
-declare class Dom {
-    tag: string;
-    _attr?: attr | undefined;
-    _ctx: ctx[];
-    component: boolean;
-    constructor(tag: string, _attr?: attr | undefined, _ctx?: ctx[]);
-    __(pid?: idm): {
-        ctx: string;
-        attr: VMapper;
-    };
-}
-declare function dom(tag: string | ((attr?: attr, ...ctx: ctx[]) => Dom), attr?: attr, ...ctx: ctx[]): Dom;
-declare function frag(r: any, ...d: ctx[]): (DV | (() => DV | DV[]))[];
-declare const eventStream: (url: string, withCredentials?: boolean) => {
-    stream: EventSource;
-    url: string;
-    on(event: obj<(a: MessageEvent) => void>): any;
-};
-declare const local: {
-    get: (item: obj<() => any> | string) => {
-        key: string;
-        func: (() => any) | null;
-        storage: Storage;
-        readonly as: {
-            value: any;
-            readonly str: string | null;
-            readonly int: number | null;
-            readonly float: number | null;
-            readonly bool: boolean | null;
-            readonly json: any;
-        };
-        readonly value: string | null;
-        readonly save: void;
-        set: any;
-        readonly remove: void;
-    };
-};
-declare const session: {
-    get: (item: obj<() => any> | string) => {
-        key: string;
-        func: (() => any) | null;
-        storage: Storage;
-        readonly as: {
-            value: any;
-            readonly str: string | null;
-            readonly int: number | null;
-            readonly float: number | null;
-            readonly bool: boolean | null;
-            readonly json: any;
-        };
-        readonly value: string | null;
-        readonly save: void;
-        set: any;
-        readonly remove: void;
-    };
-};
-declare function loadCSS(url: string[]): Promise<void>;
-declare function loadCSS(url: string[] | string, importmetaurl?: string): Promise<void>;
-declare function preload(url: string, as: string, type: string): string;
-declare class __ {
-    static _parseURL(url: string): {
-        parsed: string[];
-        wcard: string[];
-        query: any;
-    };
-    static _type(wrd: any, isFinal?: boolean): [any, string];
-}
+
 declare class Router {
     private map;
     private pushState;
@@ -295,6 +169,70 @@ declare class Router {
         file: string | (() => Dom | Promise<Dom>);
         title?: string;
     }): this;
+}
+
+declare class eStream {
+    stream: EventSource;
+    url: string;
+    constructor(eurl: string, withCredentials: boolean);
+    on(event: obj<(a: MessageEvent) => void>): this;
+}
+declare function eventStream(url: string, withCredentials?: boolean): eStream;
+declare class __I {
+    value: any;
+    constructor(value: any);
+    get str(): string | null;
+    get int(): number | null;
+    get float(): number | null;
+    get bool(): boolean | null;
+    get json(): any | null;
+}
+declare class _loc {
+    key: string;
+    func: (() => any) | null;
+    storage: Storage;
+    constructor(item: obj<() => any> | string, _type?: "local" | "session");
+    get as(): __I;
+    get value(): string | null;
+    get save(): void;
+    set set(val: any);
+    get remove(): void;
+}
+declare const local: {
+    get: (item: obj<() => any> | string) => _loc;
+};
+declare const session: {
+    get: (item: obj<() => any> | string) => _loc;
+};
+
+type _$ = Elem | undefined;
+declare class $$ {
+    static set p(a: any);
+    static get isDark(): boolean;
+}
+
+declare function loadCSS(url: string[]): Promise<void>;
+declare function loadCSS(url: string[] | string, importmetaurl?: string): Promise<void>;
+declare function preload(url: string, as: string, type: string): string;
+type S = string | string[] | ((e?: Element) => S) | boolean;
+type Elements = HTMLElementTagNameMap[keyof HTMLElementTagNameMap];
+interface c_events {
+    ready?: (this: Elements) => void;
+    watch?: (this: Elements) => Watcher<any> | Watcher<any>[];
+    resize?: (this: HTMLElement, e: UIEvent) => void;
+    unload?: (this: HTMLElement, e: BeforeUnloadEvent) => void;
+    popstate?: (this: HTMLElement, e: PopStateEvent) => void;
+}
+type _events = {
+    [P in keyof GlobalEventHandlersEventMap]?: (e: GlobalEventHandlersEventMap[P]) => void;
+};
+type events = _events & c_events;
+interface Battr {
+    [key: string]: any;
+    id?: string;
+    class?: S;
+    style?: CSSinT | obj<STYLE>;
+    on?: events;
 }
 declare global {
     type events = _events & c_events;
@@ -469,4 +407,4 @@ declare global {
     }
 }
 
-export { $, $$, type CSSinT, Dom, Elem, Render, Router, Watcher, type _$, __, dom, eventStream, frag, gen8, type headP, loadCSS, local, preload, session, state };
+export { $, $$, Dom, Render, Router, Watcher, type _$, dom, eventStream, frag, loadCSS, local, preload, session, state };
