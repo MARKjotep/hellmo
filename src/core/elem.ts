@@ -407,7 +407,6 @@ export class Elem<T extends TElem = HTMLElement> extends Eget {
   }
 }
 
-
 export function $(query: string): Elem | undefined;
 export function $<T extends TElem = HTMLElement>(element: T): Elem<T>;
 export function $<T extends TElem = HTMLElement>(element: T | string) {
