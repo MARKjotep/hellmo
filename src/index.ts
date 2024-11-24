@@ -23,6 +23,19 @@ interface obj<T> {
   [Key: string]: T;
 }
 
+export class $$ {
+  static set p(a: any) {
+    if (isArr(a)) {
+      console.log(...a);
+    } else {
+      console.log(a);
+    }
+  }
+  static get isDark() {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+}
+
 type meta<T> = {
   charset?: T;
   content?: T;
@@ -134,16 +147,6 @@ const TAGS = [
 const has = {
   tag: (tag: string) => TAGS.includes(tag),
 };
-
-export class $$ {
-  static set p(a: any) {
-    if (isArr(a)) {
-      console.log(...a);
-    } else {
-      console.log(a);
-    }
-  }
-}
 
 class idm {
   _c = 0;
@@ -666,6 +669,8 @@ export function $<T extends TElem = HTMLElement>(element: T | string) {
   }
 }
 
+export type _$ = Elem | undefined;
+
 /*
 -------------------------
 
@@ -907,12 +912,17 @@ export class Render {
       const TA = await this.app(data);
       const XDM = isArr(TA) ? TA : [TA];
       if (isCTX) _XRT.inner = "";
-      XDM.reverse().forEach((ts: Dom) => {
-        const its = ts.__(_id);
-        XMAP.map(its.attr);
-        if (isCTX) _XRT.appendfirst = its.ctx;
+
+      XDM.forEach((ts: Dom) => {
+        if (ts instanceof Dom) {
+          const its = ts.__(_id);
+          XMAP.map(its.attr);
+          if (isCTX) _XRT.appendfirst = its.ctx;
+        } else {
+          if (isCTX) _XRT.appendfirst = ts;
+        }
       });
-      _XRT.appendfirst = noscrp;
+      if (isCTX) _XRT.appendfirst = noscrp;
 
       trigger("render");
       windowState();
@@ -922,10 +932,22 @@ export class Render {
   async ssr(data = {}) {
     const TT = await this.app(data);
     const id = makeID(5);
-    const CTX = TT.__(new idm(id + "_0"));
+
+    const nid = new idm(id + "_0");
+    const XDM = isArr(TT) ? TT : [TT];
+    let _CTX: string[] = [];
+    XDM.forEach((ts: Dom) => {
+      if (ts instanceof Dom) {
+        const its = ts.__(nid);
+        _CTX.push(its.ctx);
+      } else {
+        _CTX.push(ts);
+      }
+    });
+
     return {
       script: `<script type="module">import x from "./${this.path}";x.dom(${ngify(data)});</script>`,
-      body: `<body id="${id}">${CTX.ctx}</body>`,
+      body: `<body id="${id}">${_CTX.join("")}</body>`,
     };
   }
 }
@@ -974,7 +996,7 @@ function _CTX(
   faMap: VMapper,
   pid: idm = new idm(),
 ): [string, boolean, boolean] {
-  let _xval = isArr(ct) ? ct : [ct];
+  let _xval = isArr(ct) ? ct.flat() : [ct];
   let component = true;
   let isDom = false;
   const C = _xval.map((e) => {
@@ -1085,7 +1107,7 @@ export function dom(
 }
 
 export function frag(r: any, ...d: ctx[]) {
-  return d;
+  return d.flat();
 }
 
 /*
@@ -1363,70 +1385,6 @@ export function preload(url: string, as: string, type: string): string {
 }
 
 export class __ {
-  static _class(x: attr, cl: any[]) {
-    const _cl: any[] = cl;
-    if (x?.class) {
-      _cl.push(...(Array.isArray(x.class) ? x.class : [x.class]));
-    }
-    return _cl.filter((cf) => cf);
-  }
-  static _str(str?: string | Dom | number, ret?: Dom) {
-    if ((str && typeof str == "string") || typeof str == "number") {
-      return ret;
-    }
-    return str;
-  }
-  static _attr(x: attr, ...xclude: string[]) {
-    return oItems(x).reduce<any>((dc, [k, v]) => {
-      if (!xclude.includes(k)) dc[k] = v;
-      return dc;
-    }, {});
-  }
-  static _re_attr(
-    x: any,
-    vals: string[],
-    _styles: obj<any> = {},
-    ..._classes: any[]
-  ) {
-    const _x = __._attr(x, ...vals);
-
-    if (oLen(_styles)) {
-      !_x.style && (_x.style = {});
-      oAss(_x.style, _styles);
-    }
-
-    _classes && _classes.length && (_x.class = this._class(x, _classes));
-
-    return _x;
-  }
-  static _meta(meta: string, url: string) {
-    let _url = url;
-    if (meta) {
-      const rgd = rgx.exec(meta);
-      if (rgd?.length == 2) {
-        let slicer = 0;
-        if (url.startsWith("..")) {
-          url.split("/").forEach((fu) => {
-            if (fu == "..") {
-              slicer += 1;
-            }
-          });
-          const rgp = url.split("/").slice(slicer).join("/");
-          const drx = rgd[1].split("/").slice(1, -1);
-          const rgt = drx.slice(0, drx.length - slicer).join("/");
-          _url = "./" + rgt + "/" + rgp;
-          // -----
-        } else if (url.startsWith(".")) {
-          const rgp = url.split("/").slice(1).join("/");
-          const rgy = rgd[1].split("/").slice(1, -1).join("/");
-
-          _url = "/" + rgy + "/" + rgp;
-        }
-      }
-    }
-
-    return _url;
-  }
   static _parseURL(url: string) {
     const parsed: string[] = [];
     const wcard: string[] = [];
@@ -1474,12 +1432,9 @@ export class __ {
 
     return { parsed, wcard, query };
   }
-  static is_number(value: any) {
-    return !isNaN(parseFloat(value)) && isFinite(value);
-  }
   static _type(wrd: any, isFinal: boolean = false) {
     let lit_type: [any, string] | [] = [];
-    if (this.is_number(wrd)) {
+    if (isNumber(wrd)) {
       const nm = Number(wrd);
       lit_type = [nm, "number"];
     } else {
@@ -1501,12 +1456,6 @@ export class __ {
       }
     }
     return lit_type;
-  }
-  static _px(itm: obj<number>) {
-    return oItems(itm).reduce<obj<string>>((pr, [k, v]) => {
-      pr[k] = typeof v == "number" ? v + "px" : v;
-      return pr;
-    }, {});
   }
 }
 

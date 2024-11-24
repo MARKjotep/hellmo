@@ -4,6 +4,10 @@ type DV = V | Dom;
 interface obj<T> {
     [Key: string]: T;
 }
+declare class $$ {
+    static set p(a: any);
+    static get isDark(): boolean;
+}
 type meta<T> = {
     charset?: T;
     content?: T;
@@ -83,9 +87,6 @@ type attr = obj<S> | Battr;
 declare const gen8: {
     numSequence: (length: number) => number[];
 };
-declare class $$ {
-    static set p(a: any);
-}
 declare class idm {
     _c: number;
     private id;
@@ -185,6 +186,7 @@ declare class Elem<T extends TElem = HTMLElement> extends Eget {
 }
 declare function $(query: string): Elem | undefined;
 declare function $<T extends TElem = HTMLElement>(element: T): Elem<T>;
+type _$ = Elem | undefined;
 declare function state<T, O = obj<any>>(val: T, affectChildren?: boolean): [() => T, (newValue: T) => void, O];
 declare class Render {
     app: (data: any) => Dom | Promise<Dom>;
@@ -210,7 +212,7 @@ declare class Dom {
     };
 }
 declare function dom(tag: string | ((attr?: attr, ...ctx: ctx[]) => Dom), attr?: attr, ...ctx: ctx[]): Dom;
-declare function frag(r: any, ...d: ctx[]): ctx[];
+declare function frag(r: any, ...d: ctx[]): (DV | (() => DV | DV[]))[];
 declare const eventStream: (url: string, withCredentials?: boolean) => {
     stream: EventSource;
     url: string;
@@ -258,19 +260,12 @@ declare function loadCSS(url: string[]): Promise<void>;
 declare function loadCSS(url: string[] | string, importmetaurl?: string): Promise<void>;
 declare function preload(url: string, as: string, type: string): string;
 declare class __ {
-    static _class(x: attr, cl: any[]): any[];
-    static _str(str?: string | Dom | number, ret?: Dom): string | Dom | undefined;
-    static _attr(x: attr, ...xclude: string[]): any;
-    static _re_attr(x: any, vals: string[], _styles?: obj<any>, ..._classes: any[]): any;
-    static _meta(meta: string, url: string): string;
     static _parseURL(url: string): {
         parsed: string[];
         wcard: string[];
         query: any;
     };
-    static is_number(value: any): boolean;
     static _type(wrd: any, isFinal?: boolean): [any, string];
-    static _px(itm: obj<number>): obj<string>;
 }
 declare class Router {
     private map;
@@ -474,4 +469,4 @@ declare global {
     }
 }
 
-export { $, $$, type CSSinT, Dom, Elem, Render, Router, Watcher, __, dom, eventStream, frag, gen8, type headP, loadCSS, local, preload, session, state };
+export { $, $$, type CSSinT, Dom, Elem, Render, Router, Watcher, type _$, __, dom, eventStream, frag, gen8, type headP, loadCSS, local, preload, session, state };
