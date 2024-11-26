@@ -1,5 +1,4 @@
-import { Mapper, obj, V } from "./@.js";
-import { attr } from "../index.js";
+import { Mapper, obj, V } from "./@";
 type S = string | string[] | ((e?: Element) => S) | boolean;
 type DV = V | Dom;
 type ctx = DV | DV[] | (() => DV | DV[]);
@@ -12,21 +11,21 @@ declare class idm {
     constructor(mid?: string);
     get mid(): string;
 }
-export declare function upMAP(NMP: VMapper): void;
 export declare function state<T, O = obj<any>>(val: T, affectChildren?: boolean): [() => T, (newValue: T) => void, O];
 export declare class Dom {
     tag: string;
-    _attr: attr | null;
+    _attr?: attr | undefined;
+    _ctx: ctx[];
     component: boolean;
-    private _ctx;
-    constructor(tag: string, _attr?: attr | null, ..._ctx: ctx[]);
+    constructor(tag: string, _attr?: attr | undefined, _ctx?: ctx[]);
     __(pid?: idm): {
         ctx: string;
         attr: VMapper;
     };
 }
-export declare function dom(tag: string | ((attr: attr, ctx: ctx[]) => Dom), attr?: attr | null, ...ctx: ctx[]): Dom;
-export declare const frag: (r: any, ...dom: ctx[]) => (DV | (() => DV | DV[]))[];
+export declare function dom(tag: string | ((attr: attr, ctx: ctx[]) => Dom), attr?: attr, ...ctx: ctx[]): Dom;
+export declare function frag(r: any, ...d: ctx[]): (DV | (() => DV | DV[]))[];
+export declare function upMAP(NMP: VMapper): void;
 export declare class Render {
     app: (data: any) => Dom | Promise<Dom>;
     path: string;

@@ -17,7 +17,7 @@ export class $$ {
   }
 }
 
-export * from "./core/storage";
+export * from "./core/storage.js";
 export { dom, frag, state, $, Dom, Watcher, Render, Router };
 /*
 -------------------------
@@ -158,6 +158,7 @@ export function preload(url: string, as: string, type: string): string {
 // -------------------------
 
 type S = string | string[] | ((e?: Element) => S) | boolean;
+
 type Elements = HTMLElementTagNameMap[keyof HTMLElementTagNameMap];
 
 interface c_events {
@@ -173,7 +174,7 @@ type _events = {
     e: GlobalEventHandlersEventMap[P],
   ) => void;
 };
-type events = _events & c_events;
+
 interface Battr {
   [key: string]: any;
   id?: string;
@@ -182,9 +183,13 @@ interface Battr {
   on?: events;
 }
 
+export type events = _events & c_events;
+export type attr = obj<S> | Battr;
+
 declare global {
   type events = _events & c_events;
-  type attr = obj<S> | Battr;
+  export type attr = obj<S> | Battr;
+
   namespace JSX {
     type Element = Dom;
     interface IntrinsicElements {

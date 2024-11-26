@@ -23,17 +23,17 @@ declare class idm {
 declare function state<T, O = obj<any>>(val: T, affectChildren?: boolean): [() => T, (newValue: T) => void, O];
 declare class Dom {
     tag: string;
-    _attr?: attr | undefined;
-    _ctx: ctx[];
+    _attr: attr | null;
     component: boolean;
-    constructor(tag: string, _attr?: attr | undefined, _ctx?: ctx[]);
+    private _ctx;
+    constructor(tag: string, _attr?: attr | null, ..._ctx: ctx[]);
     __(pid?: idm): {
         ctx: string;
         attr: VMapper;
     };
 }
-declare function dom(tag: string | ((attr?: attr, ...ctx: ctx[]) => Dom), attr?: attr, ...ctx: ctx[]): Dom;
-declare function frag(r: any, ...d: ctx[]): (DV | (() => DV | DV[]))[];
+declare function dom(tag: string | ((attr: attr, ctx: ctx[]) => Dom), attr?: attr | null, ...ctx: ctx[]): Dom;
+declare const frag: (r: any, ...dom: ctx[]) => (DV | (() => DV | DV[]))[];
 declare class Render {
     app: (data: any) => Dom | Promise<Dom>;
     path: string;
@@ -46,11 +46,11 @@ declare class Render {
     }>;
 }
 declare class Watcher<T> {
-    watching: () => T;
-    private val;
-    private _do;
-    constructor(watching: () => T);
-    on(changed: (arg: T) => void, init?: boolean): this;
+    private watchFn;
+    private value;
+    private handlers;
+    constructor(watchFn: () => T);
+    on(callback: (value: T) => void, initialize?: boolean): this;
     get update(): void;
 }
 
@@ -226,7 +226,6 @@ interface c_events {
 type _events = {
     [P in keyof GlobalEventHandlersEventMap]?: (e: GlobalEventHandlersEventMap[P]) => void;
 };
-type events = _events & c_events;
 interface Battr {
     [key: string]: any;
     id?: string;
@@ -234,9 +233,11 @@ interface Battr {
     style?: CSSinT | obj<STYLE>;
     on?: events;
 }
+type events = _events & c_events;
+type attr = obj<S> | Battr;
 declare global {
     type events = _events & c_events;
-    type attr = obj<S> | Battr;
+    export type attr = obj<S> | Battr;
     namespace JSX {
         type Element = Dom;
         interface IntrinsicElements {
@@ -407,4 +408,4 @@ declare global {
     }
 }
 
-export { $, $$, Dom, Render, Router, Watcher, type _$, dom, eventStream, frag, loadCSS, local, preload, session, state };
+export { $, $$, Dom, Render, Router, Watcher, type _$, type attr, dom, eventStream, type events, frag, loadCSS, local, preload, session, state };

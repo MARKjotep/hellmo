@@ -26,7 +26,7 @@ export interface obj<T> {
 export type V = string | number | boolean;
 export declare const numSequence: (length: number) => number[];
 export declare const RBYTES: RegExp;
-export declare const isFN: (v: any) => v is Function, isAsync: (v: any) => v is Function, isNumber: (value: any) => boolean, isDict: (val: object) => boolean, isArraybuff: (val: any) => val is string | Uint8Array | ArrayBuffer, isClassOrId: (k: string) => boolean, isBool: (v: any) => v is boolean, isStr: (v: any) => v is string, isArr: (v: any) => v is any[], isObj: (v: any) => v is object, isNum: (v: any) => v is number, isFile: (path: string, data?: string) => boolean, isDir: (path: string) => boolean;
+export declare const isFN: (v: any) => v is Function, isAsync: (v: any) => v is Function, isNumber: (value: any) => boolean, isDict: (val: object) => boolean, isArraybuff: (val: any) => val is string | Uint8Array | ArrayBuffer, isClassOrId: (k: string) => boolean, isBool: (v: any) => v is boolean, isStr: (v: any) => v is string, isArr: (v: any) => v is any[], isObj: (v: any) => v is object, isNum: (v: any) => v is number;
 export declare const oVals: {
     <T>(o: {
         [s: string]: T;
