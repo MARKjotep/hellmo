@@ -224,7 +224,7 @@ interface c_events {
     popstate?: (this: HTMLElement, e: PopStateEvent) => void;
 }
 type _events = {
-    [P in keyof GlobalEventHandlersEventMap]?: (e: GlobalEventHandlersEventMap[P]) => void;
+    [P in keyof GlobalEventHandlersEventMap]?: (this: Elements, e: GlobalEventHandlersEventMap[P]) => void;
 };
 interface Battr {
     [key: string]: any;

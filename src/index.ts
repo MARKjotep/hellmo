@@ -171,6 +171,7 @@ interface c_events {
 
 type _events = {
   [P in keyof GlobalEventHandlersEventMap]?: (
+    this: Elements,
     e: GlobalEventHandlersEventMap[P],
   ) => void;
 };
