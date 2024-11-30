@@ -2,6 +2,7 @@ import { isArr, obj } from "./core/@";
 import { dom, frag, state, Dom, Watcher, Render } from "./core/dom";
 import { $, CSSinT, Elem, STYLE } from "./core/elem";
 import { Router } from "./core/router";
+import { UI } from "./core/ui";
 
 export type _$ = Elem | undefined;
 export class $$ {
@@ -18,7 +19,7 @@ export class $$ {
 }
 
 export * from "./core/storage.js";
-export { dom, frag, state, $, Dom, Watcher, Render, Router };
+export { UI, dom, frag, state, $, Dom, Watcher, Render, Router };
 /*
 -------------------------
 -------------------------

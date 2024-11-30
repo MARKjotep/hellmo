@@ -104,6 +104,7 @@ function matchWC(str: string, fndr: string) {
 interface view {
   js: string | (() => Dom | Promise<Dom>);
   title: string;
+  css: string;
   sT?: number;
 }
 
@@ -204,15 +205,20 @@ class rS4t {
     {
       file,
       title = "",
-    }: { file: string | (() => Dom | Promise<Dom>); title?: string },
+      css = "",
+    }: {
+      file: string | (() => Dom | Promise<Dom>);
+      title?: string;
+      css?: string;
+    },
   ) {
     const bp = this.basePath;
     this.push(path);
     if (isFN(file)) {
-      this.maps[path] = { js: file, title };
+      this.maps[path] = { js: file, title, css };
     } else {
       const ult = this.pathname + (bp ? bp + file : file);
-      this.maps[path] = { js: ult.replaceAll("//", "/"), title };
+      this.maps[path] = { js: ult.replaceAll("//", "/"), title, css };
     }
   }
 }
@@ -360,9 +366,14 @@ export class Router {
     {
       file,
       title = "",
-    }: { file: string | (() => Dom | Promise<Dom>); title?: string },
+      css = "",
+    }: {
+      file: string | (() => Dom | Promise<Dom>);
+      title?: string;
+      css?: string;
+    },
   ) {
-    this.map.path(path, { file, title });
+    this.map.path(path, { file, title, css });
     //
     return this;
   }

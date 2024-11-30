@@ -1,12 +1,12 @@
+interface obj<T> {
+    [Key: string]: T;
+}
+type V = string | number | boolean;
 declare class Mapper<K, V> extends Map<K, V> {
     obj(obj?: object | null): void;
     map(map: Map<K, V>): void;
     ass<T>(key: K, obj: T): void;
 }
-interface obj<T> {
-    [Key: string]: T;
-}
-type V = string | number | boolean;
 
 type S$1 = string | string[] | ((e?: Element) => S$1) | boolean;
 type DV = V | Dom;
@@ -165,10 +165,16 @@ declare class Router {
     sheet(url: string): this;
     reset(): void;
     get(url: string, lastURL?: string): Promise<this>;
-    path(path: string, { file, title, }: {
+    path(path: string, { file, title, css, }: {
         file: string | (() => Dom | Promise<Dom>);
         title?: string;
+        css?: string;
     }): this;
+}
+
+declare class UI {
+    static isDark(...classes: string[]): [() => boolean, (v: boolean) => void];
+    static get isMatchMediaSupported(): boolean;
 }
 
 declare class eStream {
@@ -408,4 +414,4 @@ declare global {
     }
 }
 
-export { $, $$, Dom, Render, Router, Watcher, type _$, type attr, dom, eventStream, type events, frag, loadCSS, local, preload, session, state };
+export { $, $$, Dom, Render, Router, UI, Watcher, type _$, type attr, dom, eventStream, type events, frag, loadCSS, local, preload, session, state };

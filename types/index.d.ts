@@ -2,13 +2,14 @@ import { obj } from "./core/@";
 import { dom, frag, state, Dom, Watcher, Render } from "./core/dom";
 import { $, CSSinT, Elem, STYLE } from "./core/elem";
 import { Router } from "./core/router";
+import { UI } from "./core/ui";
 export type _$ = Elem | undefined;
 export declare class $$ {
     static set p(a: any);
     static get isDark(): boolean;
 }
 export * from "./core/storage.js";
-export { dom, frag, state, $, Dom, Watcher, Render, Router };
+export { UI, dom, frag, state, $, Dom, Watcher, Render, Router };
 export declare function loadCSS(url: string[]): Promise<void>;
 export declare function loadCSS(url: string[] | string, importmetaurl?: string): Promise<void>;
 export declare function preload(url: string, as: string, type: string): string;

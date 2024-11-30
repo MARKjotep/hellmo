@@ -23,8 +23,9 @@ export declare class Router {
     sheet(url: string): this;
     reset(): void;
     get(url: string, lastURL?: string): Promise<this>;
-    path(path: string, { file, title, }: {
+    path(path: string, { file, title, css, }: {
         file: string | (() => Dom | Promise<Dom>);
         title?: string;
+        css?: string;
     }): this;
 }
