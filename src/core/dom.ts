@@ -29,11 +29,15 @@ type domMAP = Mapper<string, MS2 | _MS>;
 type WTC = [(...e: any) => void, (e?: any) => any, true?];
 
 const XMAP: VMapper = new Mapper();
+
 const WinSTATE: Mapper<
   string,
   obj<(e?: HTMLElement, t?: EventTarget | null) => void>
 > = new Mapper();
+
+// -------------------------
 const WaSTATE: Mapper<string, Watcher<any>[]> = new Mapper();
+// -------------------------
 
 class idm {
   _c = 0;
@@ -514,7 +518,7 @@ export function dom(
   return new Dom(tag, attr, ...ctx);
 }
 
-export const frag = (r: any, ...dom: ctx[]) => dom.flat();
+export const frag = (r: attr, ...dom: ctx[]) => dom.flat();
 
 /*
 -------------------------
