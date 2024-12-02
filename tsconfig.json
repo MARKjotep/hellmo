@@ -1,1 +1,33 @@
-../_misc/tsconfig.json
+{
+  "compilerOptions": {
+    "moduleResolution": "Node",
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": ["ESNext", "DOM"],
+    "outDir": "./types",
+    "rootDir": "./src",
+    //
+    "strictBindCallApply": true,
+    "noImplicitThis": true,
+    "noImplicitAny": true,
+    "allowJs": true,
+    "checkJs": false,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "strict": true,
+
+    "strictPropertyInitialization": true,
+    "experimentalDecorators": true,
+    "skipLibCheck": true,
+    "composite": false,
+    //
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "strictNullChecks": true,
+    "allowSyntheticDefaultImports": true,
+    "allowArbitraryExtensions": true,
+    "alwaysStrict": true
+  },
+  "exclude": ["./util/**", "./test/**"],
+  "include": ["./src/**/*"]
+}
