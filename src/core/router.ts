@@ -1,6 +1,7 @@
 import { isFN, isNumber, isStr, obj } from "./@";
-import { dom, Dom, state } from "./dom";
+import { dom, Dom } from "./dom";
 import { $, Elem } from "./elem";
+import { State, Stateful } from "./stateful";
 
 const SLC = (cf: Elem, xid: string, attr: string = "url") => {
   const curl = cf.attr.get(attr);
@@ -243,12 +244,10 @@ export class Router {
   attr: string;
   isSheet: boolean;
   // states
-  private _page: (dm: Dom) => void;
-  private _nav: (dm: string) => void;
-  private _title: (dm: string) => void;
-  page: () => Dom;
-  nav: () => string;
-  title: () => string;
+
+  page: Stateful<Dom>;
+  nav: Stateful<string>;
+  title: Stateful<string>;
   private e?: HTMLElement;
   constructor(
     r: {
@@ -257,9 +256,10 @@ export class Router {
       isSheet?: boolean;
     } = {},
   ) {
-    [this.page, this._page] = state<Dom>(dom("div", undefined, ""), true);
-    [this.nav, this._nav] = state("/");
-    [this.title, this._title] = state("");
+    this.page = State(dom("div", {}, ""));
+    this.nav = State("/");
+    this.title = State("");
+
     this.pushState = r.pushState ?? true;
     this.isSheet = r.isSheet ?? false;
     this.attr = r.isSheet ? "surl" : "url";
@@ -269,12 +269,11 @@ export class Router {
   init(eh?: HTMLElement, ...dsmissed: ((a: any) => void)[]) {
     this.e = eh;
     const nav = this.nav;
-    const $nav = this._nav;
     const attr = this.attr;
     const STR = (xid: string, last?: string) => {
       if (xid !== last) {
         this.get(xid, last);
-        $nav(xid);
+        this.nav.value = xid;
       }
       dsmissed.forEach((df, indx) => {
         df(this.isSheet && indx == 0 ? true : false);
@@ -289,7 +288,7 @@ export class Router {
           e.preventDefault();
           const _E = $(this),
             xid = _E.attr.get(attr);
-          if (xid) STR(xid, nav());
+          if (xid) STR(xid, nav.value);
         });
       }
     });
@@ -297,7 +296,7 @@ export class Router {
     return this;
   }
   private afterImp(np: view, TTLE: string, nip: string, iswc = false) {
-    this._title(TTLE);
+    this.title.value = TTLE;
     this.init(this.e);
     if (!this.isSheet) {
       const cURL = location.pathname;
@@ -309,24 +308,25 @@ export class Router {
   }
   private async import(np: view, nip: string, iswc = false) {
     const IMP = async (njs: () => Dom | Promise<Dom>) => {
-      this._page(await njs());
+      this.page.value = await njs();
       this.afterImp(np, document.title, nip);
     };
     //
     if (isStr(np.js)) {
       const IMP = await import((location.pathname ? "" : ".") + np.js);
       if ("default" in IMP) {
-        this._page(
-          await IMP.default({
-            ...(iswc && { url: nip }),
-          }),
-        );
-
+        this.page.value = await IMP.default({
+          ...(iswc && { url: nip }),
+        });
         const TTLE = np.title ?? document.title;
         !this.isSheet && (document.title = TTLE);
         this.afterImp(np, TTLE, nip);
       } else {
-        this._page(dom("div", undefined, "error: js has no export defaults."));
+        this.page.value = dom(
+          "div",
+          undefined,
+          "error: js has no export defaults.",
+        );
       }
     } else {
       IMP(np.js);
@@ -340,7 +340,7 @@ export class Router {
     return this;
   }
   reset() {
-    this._page(dom("div", undefined, ""));
+    this.page.value = dom("div", undefined, "");
   }
   async get(url: string, lastURL?: string) {
     if (lastURL) {
@@ -352,12 +352,12 @@ export class Router {
     const [_url, iswc] = this.map.url(url);
     if (_url) {
       this.url = url;
-      this._nav(url);
+      this.nav.value = url;
       !this.isSheet && $(`[${this.attr}]`)?.all.forEach((cf) => SLC(cf, url));
       //
       await this.import(this.map.maps[_url], url, iswc);
     } else {
-      this._page(dom("div", undefined, `"${url}" - not found...`));
+      this.page.value = dom("div", undefined, `"${url}" - not found...`);
     }
     return this;
   }

@@ -1,8 +1,10 @@
 import { isArr, obj } from "./core/@";
-import { dom, frag, state, Dom, Watcher, Render } from "./core/dom";
+import { baseAttr, c_events, Elements, X3 } from "./core/attr";
+import { dom, frag, Dom, Render } from "./core/dom";
 import { $, CSSinT, Elem, STYLE } from "./core/elem";
 import { Router } from "./core/router";
-import { UI } from "./core/ui";
+import { State } from "./core/stateful";
+export * from "./core/ui";
 
 export type _$ = Elem | undefined;
 export class $$ {
@@ -19,35 +21,35 @@ export class $$ {
 }
 
 export * from "./core/storage.js";
-export { UI, dom, frag, state, $, Dom, Watcher, Render, Router };
+export { dom, frag, State, $, Dom, Render, Router };
 /*
 -------------------------
 -------------------------
 */
-if (typeof window === "undefined") {
-  Object.assign(global, {
-    window: {
-      location: {
-        pathname: "",
-      },
-    },
-    document: {
-      querySelector: () => ({}),
-      querySelectorAll: () => ({}),
-    },
-    location: {
-      location: {
-        pathname: "",
-      },
-    },
-    localStorage: {},
-    sessionStorage: {},
-    navigator: {},
-    history: {},
-    screen: {},
-    performance: {},
-  });
-}
+// if (typeof window === "undefined") {
+//   Object.assign(global, {
+//     window: {
+//       location: {
+//         pathname: "",
+//       },
+//     },
+//     document: {
+//       querySelector: () => ({}),
+//       querySelectorAll: () => ({}),
+//     },
+//     location: {
+//       location: {
+//         pathname: "",
+//       },
+//     },
+//     localStorage: {},
+//     sessionStorage: {},
+//     navigator: {},
+//     history: {},
+//     screen: {},
+//     performance: {},
+//   });
+// }
 
 /*
 -------------------------
@@ -86,7 +88,7 @@ function metaURL(meta: string | undefined, url: string) {
   return _url;
 }
 
-function isCSS(href: string) {
+function isLINK(href: string) {
   const existingLinks: any = document.querySelectorAll("head link");
   for (const link of existingLinks) {
     if ("rel" in link) {
@@ -116,7 +118,7 @@ export async function loadCSS(
   }
 
   let _url = metaURL(importmetaurl, url);
-  if (isCSS(_url)) return;
+  if (isLINK(_url)) return;
 
   return new Promise<void>((resolve, reject) => {
     const style = document.createElement("link");
@@ -134,7 +136,7 @@ export async function loadCSS(
 }
 
 export function preload(url: string, as: string, type: string): string {
-  if (isCSS(url)) return url;
+  if (isLINK(url)) return url;
 
   const link = document.createElement("link");
   link.rel = "preload";
@@ -158,39 +160,15 @@ export function preload(url: string, as: string, type: string): string {
 
 // -------------------------
 
-type S = string | string[] | ((e?: Element) => S) | boolean;
-
-type Elements = HTMLElementTagNameMap[keyof HTMLElementTagNameMap];
-
-interface c_events {
-  ready?: (this: Elements) => void;
-  watch?: (this: Elements) => Watcher<any> | Watcher<any>[];
-  resize?: (this: HTMLElement, e: UIEvent) => void;
-  unload?: (this: HTMLElement, e: BeforeUnloadEvent) => void;
-  popstate?: (this: HTMLElement, e: PopStateEvent) => void;
-}
-
-type _events = {
-  [P in keyof GlobalEventHandlersEventMap]?: (
-    this: Elements,
-    e: GlobalEventHandlersEventMap[P],
-  ) => void;
-};
-
-interface Battr {
-  [key: string]: any;
-  id?: string;
-  class?: S;
-  style?: CSSinT | obj<STYLE>;
-  on?: events;
-}
-
-export type events = _events & c_events;
-export type attr = obj<S> | Battr;
-
 declare global {
-  type events = _events & c_events;
-  export type attr = obj<S> | Battr;
+  type events = {
+    [P in keyof GlobalEventHandlersEventMap]?: (
+      this: Elements,
+      e: GlobalEventHandlersEventMap[P],
+    ) => void;
+  } & c_events;
+
+  type attr = baseAttr | obj<X3>;
 
   namespace JSX {
     type Element = Dom;

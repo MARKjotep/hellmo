@@ -1,42 +1,25 @@
 import { obj } from "./core/@";
-import { dom, frag, state, Dom, Watcher, Render } from "./core/dom";
-import { $, CSSinT, Elem, STYLE } from "./core/elem";
+import { baseAttr, c_events, Elements, X3 } from "./core/attr";
+import { dom, frag, Dom, Render } from "./core/dom";
+import { $, Elem } from "./core/elem";
 import { Router } from "./core/router";
-import { UI } from "./core/ui";
+import { State } from "./core/stateful";
+export * from "./core/ui";
 export type _$ = Elem | undefined;
 export declare class $$ {
     static set p(a: any);
     static get isDark(): boolean;
 }
 export * from "./core/storage.js";
-export { UI, dom, frag, state, $, Dom, Watcher, Render, Router };
+export { dom, frag, State, $, Dom, Render, Router };
 export declare function loadCSS(url: string[]): Promise<void>;
 export declare function loadCSS(url: string[] | string, importmetaurl?: string): Promise<void>;
 export declare function preload(url: string, as: string, type: string): string;
-type S = string | string[] | ((e?: Element) => S) | boolean;
-type Elements = HTMLElementTagNameMap[keyof HTMLElementTagNameMap];
-interface c_events {
-    ready?: (this: Elements) => void;
-    watch?: (this: Elements) => Watcher<any> | Watcher<any>[];
-    resize?: (this: HTMLElement, e: UIEvent) => void;
-    unload?: (this: HTMLElement, e: BeforeUnloadEvent) => void;
-    popstate?: (this: HTMLElement, e: PopStateEvent) => void;
-}
-type _events = {
-    [P in keyof GlobalEventHandlersEventMap]?: (this: Elements, e: GlobalEventHandlersEventMap[P]) => void;
-};
-interface Battr {
-    [key: string]: any;
-    id?: string;
-    class?: S;
-    style?: CSSinT | obj<STYLE>;
-    on?: events;
-}
-export type events = _events & c_events;
-export type attr = obj<S> | Battr;
 declare global {
-    type events = _events & c_events;
-    export type attr = obj<S> | Battr;
+    type events = {
+        [P in keyof GlobalEventHandlersEventMap]?: (this: Elements, e: GlobalEventHandlersEventMap[P]) => void;
+    } & c_events;
+    type attr = baseAttr | obj<X3>;
     namespace JSX {
         type Element = Dom;
         interface IntrinsicElements {

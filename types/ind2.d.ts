@@ -1,5 +1,6 @@
-import { Mapper, V } from "./@";
-import { Stateful } from "./stateful";
+import { Mapper, V } from "./core/@";
+import { attr, events } from "./core/attr";
+import { Stateful } from "./core/stateful";
 type ctx = V | Dom | Stateful<V | Dom>;
 declare class idm {
     private _c;

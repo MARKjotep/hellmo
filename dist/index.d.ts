@@ -8,32 +8,59 @@ declare class Mapper<K, V> extends Map<K, V> {
     ass<T>(key: K, obj: T): void;
 }
 
-type S$1 = string | string[] | ((e?: Element) => S$1) | boolean;
-type DV = V | Dom;
-type ctx = DV | DV[] | (() => DV | DV[]);
-type _MS = [(e?: Element) => S$1 | ctx, any];
-type MS2 = obj<_MS>;
-type VMapper = Mapper<string, Mapper<string, MS2 | _MS>>;
+type Elements$1 = HTMLElementTagNameMap[keyof HTMLElementTagNameMap];
+declare class Stateful<T> extends EventTarget {
+    private options?;
+    private states;
+    private _value;
+    private listening;
+    private isNotWindow;
+    constructor(value: T, options?: AddEventListenerOptions | undefined);
+    get value(): T;
+    set value(newValue: T);
+    get listen(): () => void;
+    call<Q>(callback: (this: Elements$1, arg: T) => Q, id: string, entry: string): () => void;
+    reset(id: string): void;
+}
+declare function State<T>(value: T): Stateful<T>;
+
+type X2 = V | V[];
+type X3 = X2 | Stateful<X2>;
+type CSSinT$1 = {
+    [P in keyof CSSStyleDeclaration]?: X3;
+} & {
+    [key: string]: X3;
+};
+type Elements = HTMLElementTagNameMap[keyof HTMLElementTagNameMap];
+interface c_events {
+    watch?: (this: Elements) => [(...args: any[]) => void, Stateful<any>[]];
+    ready?: (this: Elements) => void;
+    resize?: (this: Elements, e: UIEvent) => void;
+    unload?: (this: Elements, e: BeforeUnloadEvent) => void;
+    popstate?: (this: Elements, e: PopStateEvent) => void;
+}
+interface baseAttr {
+    style?: CSSinT$1;
+    on?: events;
+    id?: string;
+    class?: X3;
+}
+
+type ctx = V | Dom | Stateful<V | Dom>;
 declare class idm {
-    _c: number;
-    id: string;
+    private _c;
+    private id;
     constructor(mid?: string);
     get mid(): string;
 }
-declare function state<T, O = obj<any>>(val: T, affectChildren?: boolean): [() => T, (newValue: T) => void, O];
 declare class Dom {
-    tag: string;
-    _attr: attr | null;
-    component: boolean;
-    private _ctx;
-    constructor(tag: string, _attr?: attr | null, ..._ctx: ctx[]);
-    __(pid?: idm): {
-        ctx: string;
-        attr: VMapper;
-    };
+    statefuls: (() => void)[];
+    ons: Mapper<string, events>;
+    __: (pid?: idm) => string;
+    constructor(tag: string, attr?: attr, ...ctx: ctx[]);
 }
-declare function dom(tag: string | ((attr: attr, ctx: ctx[]) => Dom), attr?: attr | null, ...ctx: ctx[]): Dom;
-declare const frag: (r: any, ...dom: ctx[]) => (DV | (() => DV | DV[]))[];
+declare function dom(tag: string | ((attr: any, ...ctx: any[]) => Dom), attr?: attr, ...ctx: ctx[]): Dom;
+declare const frag: (r: attr, ...dom: any[]) => any[];
 declare class Render {
     app: (data: any) => Dom | Promise<Dom>;
     path: string;
@@ -44,14 +71,6 @@ declare class Render {
         script: string;
         body: string;
     }>;
-}
-declare class Watcher<T> {
-    private watchFn;
-    private value;
-    private handlers;
-    constructor(watchFn: () => T);
-    on(callback: (value: T) => void, initialize?: boolean): this;
-    get update(): void;
 }
 
 type TElem = HTMLElement & InstanceType<typeof Element>;
@@ -147,12 +166,9 @@ declare class Router {
     url: string;
     attr: string;
     isSheet: boolean;
-    private _page;
-    private _nav;
-    private _title;
-    page: () => Dom;
-    nav: () => string;
-    title: () => string;
+    page: Stateful<Dom>;
+    nav: Stateful<string>;
+    title: Stateful<string>;
     private e?;
     constructor(r?: {
         pushState?: boolean;
@@ -172,9 +188,18 @@ declare class Router {
     }): this;
 }
 
+declare class ColorScheme {
+    state: Stateful<boolean>;
+    toggle: (isDark: boolean) => void;
+    click: (e: Event) => void;
+    constructor({ toggle, initialState, }?: {
+        toggle?: string[];
+        initialState?: boolean;
+    });
+    get isMatchMediaSupported(): boolean;
+    get isDark(): boolean;
+}
 declare class UI {
-    static isDark(...classes: string[]): [() => boolean, (v: boolean) => void];
-    static get isMatchMediaSupported(): boolean;
 }
 
 declare class eStream {
@@ -220,30 +245,11 @@ declare class $$ {
 declare function loadCSS(url: string[]): Promise<void>;
 declare function loadCSS(url: string[] | string, importmetaurl?: string): Promise<void>;
 declare function preload(url: string, as: string, type: string): string;
-type S = string | string[] | ((e?: Element) => S) | boolean;
-type Elements = HTMLElementTagNameMap[keyof HTMLElementTagNameMap];
-interface c_events {
-    ready?: (this: Elements) => void;
-    watch?: (this: Elements) => Watcher<any> | Watcher<any>[];
-    resize?: (this: HTMLElement, e: UIEvent) => void;
-    unload?: (this: HTMLElement, e: BeforeUnloadEvent) => void;
-    popstate?: (this: HTMLElement, e: PopStateEvent) => void;
-}
-type _events = {
-    [P in keyof GlobalEventHandlersEventMap]?: (this: Elements, e: GlobalEventHandlersEventMap[P]) => void;
-};
-interface Battr {
-    [key: string]: any;
-    id?: string;
-    class?: S;
-    style?: CSSinT | obj<STYLE>;
-    on?: events;
-}
-type events = _events & c_events;
-type attr = obj<S> | Battr;
 declare global {
-    type events = _events & c_events;
-    export type attr = obj<S> | Battr;
+    type events = {
+        [P in keyof GlobalEventHandlersEventMap]?: (this: Elements, e: GlobalEventHandlersEventMap[P]) => void;
+    } & c_events;
+    type attr = baseAttr | obj<X3>;
     namespace JSX {
         type Element = Dom;
         interface IntrinsicElements {
@@ -414,4 +420,4 @@ declare global {
     }
 }
 
-export { $, $$, Dom, Render, Router, UI, Watcher, type _$, type attr, dom, eventStream, type events, frag, loadCSS, local, preload, session, state };
+export { $, $$, ColorScheme, Dom, Render, Router, State, UI, type _$, dom, eventStream, frag, loadCSS, local, preload, session };

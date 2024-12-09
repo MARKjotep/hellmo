@@ -11,7 +11,6 @@
   ],
   "scripts": {
     "cp_core": "mkdir -p ./src/core; cp -L ../_misc/@.ts ./src/core;",
-    "link__": "mkdir -p ./src/core; ln -sf ../../../_misc/@.ts ./src/core; ln -sf ../_misc/tsconfig.json ./",
     "build": "tsc && bun build ./src/index.ts --outdir ./dist --minify --packages external --target browser && rollup -c ./util/rollup.config.js"
   },
   "keywords": [

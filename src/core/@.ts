@@ -102,7 +102,11 @@ export class Mapper<K, V> extends Map<K, V> {
   }
   map(map: Map<K, V>) {
     map.forEach((v, k) => {
-      this.set(k, v);
+      if (isObj(v)) {
+        this.ass(k, v);
+      } else {
+        this.set(k, v);
+      }
     });
   }
   ass<T>(key: K, obj: T) {
@@ -110,6 +114,16 @@ export class Mapper<K, V> extends Map<K, V> {
     oAss(this.get(key)!, obj);
   }
 }
+
+export const keyInMap = <T>(id: string, map: Mapper<string, any>) => {
+  if (!map.has(id)) map.set(id, new Mapper());
+  return map.get(id)! as T;
+};
+
+export const keyInMapArray = <T>(id: string, map: Mapper<string, any>) => {
+  if (!map.has(id)) map.set(id, []);
+  return map.get(id)! as T;
+};
 
 /*
 -------------------------
@@ -203,6 +217,21 @@ export const isFN = (v: any): v is Function => typeof v === "function",
   -------------------------
   */
   isNum = (v: any): v is number => typeof v === "number",
+  /*
+  -------------------------
+  -------------------------
+  */
+  isNull = (v: any): v is null => typeof v === null,
+  /*
+  -------------------------
+  -------------------------
+  */
+  isUndefined = (v: any): v is undefined => typeof v === undefined,
+  /*
+  -------------------------
+  -------------------------
+  */
+  isNotWindow = () => typeof window === undefined,
   /*
   -------------------------
   -------------------------

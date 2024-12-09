@@ -1,47 +1,32 @@
 import {
   $$,
   isArr,
-  isBool,
-  isDict,
   isFN,
+  isNull,
   isNumber,
   isObj,
+  keyInMapArray,
   makeID,
   Mapper,
   ngify,
-  oAss,
   obj,
   oItems,
-  oLen,
-  reCamel,
   V,
-} from "./@.js";
-import { $, CSSinT, Elem, STYLE } from "./elem.js";
-import { attr } from "../index.js";
+} from "./@";
+import { ATTR, Elements } from "./attr";
+import { getElementById, State, Stateful } from "./stateful";
 
-type S = string | string[] | ((e?: Element) => S) | boolean;
-type DV = V | Dom;
-type ctx = DV | DV[] | (() => DV | DV[]);
-type _MS = [(e?: Element) => S | ctx, any];
-type MS2 = obj<_MS>;
-type VMapper = Mapper<string, Mapper<string, MS2 | _MS>>;
-type domMAP = Mapper<string, MS2 | _MS>;
-type WTC = [(...e: any) => void, (e?: any) => any, true?];
+/*
+------------------------- 
 
-const XMAP: VMapper = new Mapper();
+-------------------------
+*/
 
-const WinSTATE: Mapper<
-  string,
-  obj<(e?: HTMLElement, t?: EventTarget | null) => void>
-> = new Mapper();
-
-// -------------------------
-const WaSTATE: Mapper<string, Watcher<any>[]> = new Mapper();
-// -------------------------
+type ctx = V | Dom | Stateful<V | Dom>;
 
 class idm {
-  _c = 0;
-  id = "";
+  private _c = 0;
+  private id = "";
   constructor(mid?: string) {
     this._c = 0;
     this.id = mid ?? makeID(5);
@@ -54,7 +39,7 @@ class idm {
     }
   }
   get mid() {
-    return this.id + "_" + ++this._c;
+    return this.id + "_" + this._c++;
   }
 }
 
@@ -81,13 +66,63 @@ const hasTag = (tag: string) => TAGS.includes(tag);
 
 /*
 -------------------------
-
+Separate the statefuls to make it optional --
 -------------------------
 */
 
+const WinSTATE: Mapper<
+  string,
+  obj<(e?: HTMLElement, t?: EventTarget | null) => void>
+> = new Mapper();
+const EventListeners: Mapper<string, (() => any)[]> = new Mapper();
+
+const Listen = (E: Elements, type: string, cb: () => any) => {
+  E.addEventListener(type, cb);
+  return () => {
+    E.removeEventListener(type, cb);
+  };
+};
+
+function handleWatch(
+  key: string,
+  w: [(...args: any[]) => void, Stateful<any>[]],
+) {
+  const [cb, statefuls] = w;
+
+  const smap = () => statefuls.map((st) => st.value);
+  const handler = () => {
+    cb(...smap());
+  };
+  statefuls.forEach((st) => {
+    st.call(handler, key, key + "_watch")();
+  });
+}
+
+function handleEvents(ons: Mapper<string, events>) {
+  for (const [key, val] of ons) {
+    const E = getElementById(key);
+    if (E) {
+      oItems(val).forEach(([k, v]) => {
+        if (k === "ready") {
+          v.apply(E);
+        } else if (["resize", "unload", "popstate"].includes(k)) {
+          //
+          WinSTATE.set(key, { [k]: v });
+        } else if (k === "watch") {
+          // load the watcher here
+          handleWatch(key, v());
+        } else {
+          const KARR = <(() => any)[]>keyInMapArray(key, EventListeners);
+          KARR.push(Listen(E, k, v));
+        }
+        //
+      });
+    }
+  }
+}
+
 function windowState() {
   const _W = window;
-  const _D = document;
 
   const handleEvent = (
     event: UIEvent | BeforeUnloadEvent | PopStateEvent,
@@ -95,7 +130,7 @@ function windowState() {
   ) => {
     WinSTATE.forEach((val, key) => {
       if (val[eventType]) {
-        const D = _D.getElementById(key);
+        const D = getElementById(key);
         if (D) {
           val[eventType].call(D, event.target as any);
         } else {
@@ -110,443 +145,169 @@ function windowState() {
   _W.addEventListener("popstate", (e) => handleEvent(e, "popstate"));
 }
 
-function dom_trig(
-  key: string,
-  selector: string,
-  element: Elem,
-  state: _MS,
-): boolean {
-  const [getValue, prevValue] = state;
-  const newValue = getValue(element.e) as any;
-  const elementId = element.id;
-
-  if (elementId) {
-    const newIdManager = new idm(elementId);
-    const valueMapper: VMapper = new Mapper();
-    const [contextValue, _] = _CTX(newValue, valueMapper, newIdManager);
-
-    if (prevValue !== contextValue) {
-      XMAP.get(key)!.get(selector)![1] = contextValue;
-      valueMapper.size && upMAP(valueMapper);
-      element.inner = contextValue;
-      return true;
-    }
-  }
-  return false;
-}
-
-function trigger(by: string, affectChildren = false, noDom = true) {
-  const _D = document;
-  if (!XMAP.size) return;
-  handleXMAPEntries(_D, affectChildren, noDom);
-  updateWatchState();
-}
-
-function handleXMAPEntries(
-  _D: Document,
-  affectChildren: boolean,
-  noDom: boolean,
-) {
-  for (const [key, val] of XMAP) {
-    if (!val.size) {
-      XMAP.delete(key);
-      continue;
-    }
-    const D = _D.getElementById(key);
-    if (!D) {
-      XMAP.delete(key);
-      continue;
-    }
-
-    const dx = $(D);
-    const mx = affectChildren ? "dom" : "dom_ctx";
-    const vg = val.get(mx);
-
-    if (noDom && vg && dom_trig(key, mx, dx, vg as _MS)) {
-      trigger("doms", false, false);
-      continue;
-    }
-
-    processMapEntries(val, key, dx);
-  }
-}
-
-function processMapEntries(val: Map<any, any>, key: string, dx: Elem) {
-  for (const [x, y] of val) {
-    if (x === "dom" || x === "dom_ctx") continue;
-    switch (x) {
-      case "ctx":
-        handleContext(key, dx, y);
-        break;
-      case "on":
-        handleEvents(key, dx, y);
-        break;
-      case "style":
-        handleStyles(key, dx, y);
-        break;
-      default:
-        handleDefaultAttribute(key, dx, x, y);
-    }
-  }
-}
-
-function handleContext(key: string, dx: Elem, y: _MS) {
-  const [cxt, _ctx] = y;
-  const NMP: VMapper = new Mapper();
-  const [ic] = _CTX(cxt(dx.e) as any, NMP);
-
-  if (_ctx !== ic) {
-    dx.inner = ic;
-    NMP.size && upMAP(NMP);
-    const XG = XMAP.get(key)?.get("ctx");
-    if (XG) XG[1] = ic;
-  }
-}
-
-function handleEvents(key: string, dx: Elem, y: any) {
-  XMAP.get(key)?.delete("on");
-  oItems(y).forEach(([kk, vv]) => {
-    if (!isFN(vv)) return;
-
-    let xvv = vv as (e?: HTMLElement | undefined) => void;
-    if (kk === "ready") {
-      vv.apply(dx.e);
-    } else if (["resize", "unload", "popstate"].includes(kk)) {
-      WinSTATE.set(key, { [kk]: xvv });
-    } else if (kk === "watch") {
-      const vvd = vv.apply(dx.e) as WTC | WTC[];
-      if (vvd) {
-        let fvvd = isArr(vvd) ? vvd : [vvd];
-        fvvd.length && WaSTATE.set(key, fvvd as any);
-      }
-    } else {
-      dx.on(kk as any, xvv);
-    }
-  });
-}
-
-function handleStyles(key: string, dx: Elem, y: any) {
-  const _stl: obj<V> = {};
-  oItems(y).forEach(([kk, vv]) => {
-    const [nval, _nval] = vv as _MS;
-    const sval = nval(dx.e) as any;
-    if (sval !== _nval) {
-      _stl[kk] = sval;
-      oAss(XMAP.get(key)?.get("style") ?? {}, {
-        [kk]: [nval, sval],
-      });
-    }
-  });
-  oLen(_stl) && dx.style.set(_stl);
-}
-
-function handleDefaultAttribute(key: string, dx: Elem, x: string, y: _MS) {
-  let [xy, _xy] = y;
-  let yxy = xy(dx.e);
-  if (Array.isArray(yxy)) {
-    yxy = yxy.filter((y) => y != "").join(" ");
-  }
-  if (yxy != _xy) {
-    dx.attr.set({ [x]: yxy });
-    XMAP.get(key)?.set(x, [xy, yxy]);
-  }
-}
-
-function updateWatchState() {
-  WaSTATE.forEach((val) => {
-    val.forEach((vv) => {
-      if ("update" in vv) {
-        vv.update;
-      }
-    });
-  });
-}
-
-// ---------------------
-
-const reValDom = (value: any, shouldAffectChildren: boolean): void => {
-  if (value instanceof Dom && shouldAffectChildren) {
-    value.component = false;
-  } else if (isArr(value)) {
-    value.forEach((item) => reValDom(item, shouldAffectChildren));
-  }
+const getDomProps = (arg: V | Dom, key: string) => {
+  const states: (() => void)[] = [];
+  const on: Mapper<string, events> = new Mapper();
+  const ctx = getCTX(arg, key, states, on);
+  return { states, on, ctx };
 };
 
-function __unChanged(val: any, nval: any): boolean {
-  if (typeof nval === "object" && isArr(nval) && !isObj(nval[0])) {
-    return nval.join("") === val.join("");
-  }
-  return val === nval;
-}
-
-export function upMAP(NMP: VMapper) {
-  NMP.size &&
-    NMP.keys().forEach((fc) => {
-      XMAP.delete(fc);
-      WaSTATE.delete(fc);
-      WinSTATE.delete(fc);
-    });
-  XMAP.map(NMP);
-}
-
-export function state<T, O = obj<any>>(
-  val: T,
-  affectChildren = false,
-): [() => T, (newValue: T) => void, O] {
-  reValDom(val, affectChildren);
-  let currentValue: T = val;
-  let stateObj: O = {} as O;
-  //
-  const getValue = (): T => currentValue;
-  const setValue = (newValue: T): void => {
-    if (__unChanged(currentValue, newValue)) return;
-    reValDom(newValue, affectChildren);
-    currentValue = newValue;
-    trigger("state", affectChildren);
-  };
-  return [getValue, setValue, stateObj];
-}
-
-/*
--------------------------
-
--------------------------
-*/
-
-const processATTR = (
-  attMap: Mapper<string, string>,
-  doMap: domMAP,
-  attr: attr | null = null,
-) => {
-  if (!attr) return;
-
-  oItems(attr).forEach((k) => {
-    _ATTR(k, attMap, doMap);
-  });
-};
-
-function _ATTR(
-  attr: [string, any],
-  attMap: Mapper<string, string>,
-  doMap: domMAP,
-) {
-  const [key, value] = attr;
-  const isStyleAttr = key === "style";
-
-  if (isFN(value)) {
-    const evaluatedValue = value();
-
-    _ATTR([key, evaluatedValue], attMap, doMap);
-    doMap.set(key, [value, evaluatedValue]);
-    return;
-  }
-
-  if (isDict(value)) {
-    handleDictValue(key, value, isStyleAttr, attMap, doMap);
-    return;
-  }
-
-  const processedValue = (isArr(value) ? value.flat() : [value])
-    .filter((item) => item !== undefined)
-    .map((item) => (isBool(item) ? (item ? "" : "false") : String(item)))
-    .join(" ");
-
-  attMap.set(key, processedValue);
-}
-
-function handleDictValue(
-  key: string,
-  value: Record<string, any>,
-  isStyle: boolean,
-  attMap: Mapper<string, string>,
-  doMap: domMAP,
-) {
-  if (isStyle) {
-    const styleValue = processStyleObject(value, doMap);
-    attMap.set("style", styleValue);
-  } else if (key === "on") {
-    doMap.set(key, value);
-  }
-}
-
-function processStyleObject(
-  styleObj: Record<string, any>,
-  doMap: domMAP,
-): string {
-  return oItems(styleObj)
-    .map(([styleProp, styleValue]) => {
-      const processedProp = reCamel(styleProp);
-      let processedValue = styleValue;
-
-      if (isFN(styleValue)) {
-        processedValue = styleValue();
-        if (!doMap.has("style")) {
-          doMap.set("style", {});
-        }
-        oAss(doMap.get("style")!, {
-          [processedProp]: [styleValue, processedValue],
-        });
-      }
-
-      return `${processedProp}:${processedValue}`;
-    })
-    .join(";");
-}
-
-const processCTX = (
+const processCtx = (
   ctx: ctx[],
-  _ctx: string[],
-  attr: VMapper,
-  doMap: domMAP,
+  inner: string[],
+  id: string,
   pid: idm,
-  xid: string,
+  attr: ATTR,
+  statefuls: (() => void)[],
+  ons: Mapper<string, events>,
 ) => {
-  const x_len = ctx.length;
-
-  const processFunction = (ct: any, isMultiContext: boolean) => {
-    if (isMultiContext) {
-      const [_cc] = _CTX(dom("div", {}, ct), attr, pid);
-      _ctx.push(_cc);
+  const processStateful = (cc: Stateful<V | Dom>, isMultiCtx: boolean) => {
+    if (isMultiCtx) {
+      processCtx([dom("div", {}, cc)], inner, id, pid, attr, statefuls, ons);
     } else {
-      const vt = ct();
-      const ndx = new idm(xid + "_0");
-      xid = ndx.mid;
-      const [_cc, isDom, comp] = _CTX(vt, attr, ndx);
-      const ccd = isDom ? (comp ? "dom_ctx" : "dom") : "ctx";
-      doMap.set(ccd, [ct, _cc]);
+      const ndx = new idm(id + "_0");
+      id = ndx.mid;
+      attr.id = id;
+      processCtx([cc.value], inner, id, ndx, attr, statefuls, ons);
 
-      _ctx.push(_cc);
+      const entry = cc.value instanceof Dom ? "dom" : "ctx";
+      //
+      statefuls.push(
+        //
+        cc.call(
+          function (this: Elements, arg: V | Dom) {
+            const elementId = this.id;
+            if (elementId) {
+              const { states, on, ctx } = getDomProps(arg, elementId);
+              if (this.innerHTML !== ctx) {
+                cc.reset(elementId);
+                this.innerHTML = ctx;
+                states.forEach((ins) => ins());
+                // unload the events associated with the element
+                EventListeners.get(elementId)?.forEach((v) => v());
+                // Push new events
+                handleEvents(on);
+                // Delete window state
+                WinSTATE.delete(elementId);
+                // Delete watched states
+                // WaSTATE.delete(fc);
+                // Also reset the dependencis in ON states
+              }
+            }
+          },
+          id,
+          entry,
+        ),
+      );
     }
   };
 
-  ctx.forEach((ct) => {
-    if (isArr(ct)) {
-      processCTX(ct, _ctx, attr, doMap, pid, xid);
-    } else if (isFN(ct)) {
-      processFunction(ct, x_len > 1);
+  const processItem = (cc: ctx) => {
+    if (isArr(cc)) {
+      processCtx(cc, inner, id, pid, attr, statefuls, ons);
+    } else if (cc instanceof Stateful) {
+      processStateful(cc, ctx.length > 1);
     } else {
-      const [_cc] = _CTX(ct, attr, pid);
-      _ctx.push(_cc);
+      inner.push(getCTX(cc, id, statefuls, ons));
     }
-  });
+  };
 
-  return xid;
+  ctx.forEach(processItem);
 };
 
-function _CTX(
-  ct: ctx,
-  attr: VMapper,
-  pid: idm = new idm(),
-): [string, boolean, boolean] {
-  const values = isArr(ct) ? ct.flat() : [ct];
-  let component = true;
-  let isDom = false;
-
-  const processedValues = values.map((value) => {
-    if (value instanceof Dom) {
-      isDom = true;
-      component = value.component;
-      const processedDom = value.__(pid);
-      attr.map(processedDom.attr);
-
-      return processedDom.ctx;
-    }
-
-    if (isObj(value)) {
-      return JSON.stringify(value);
-    }
-
-    return String(value === undefined ? "" : value);
-  });
-
-  return [processedValues.join(""), isDom, component];
-}
+const getCTX = (
+  cc: ctx,
+  pid: string,
+  statefuls: (() => void)[],
+  ons: Mapper<string, events>,
+) => {
+  if (cc instanceof Dom) {
+    const ND = cc.__(new idm(pid));
+    ons.map(cc.ons);
+    statefuls.push(...cc.statefuls);
+    return ND;
+  } else if (isObj(cc)) {
+    return ngify(cc);
+  } else if (cc !== undefined && !isNull(cc)) {
+    return String(cc);
+  }
+  return "";
+};
 
 export class Dom {
-  component: boolean = true;
-  private _ctx: ctx[];
-  constructor(
-    public tag: string,
-    public _attr: attr | null = null,
-    ..._ctx: ctx[]
-  ) {
-    this._ctx = _ctx;
-  }
-  __(pid: idm = new idm()) {
-    let xid = pid.mid;
-    const doMap: domMAP = new Mapper();
-    const attMap: Mapper<string, string> = new Mapper();
-    const attr: VMapper = new Mapper();
-    const _ctx: string[] = [];
+  statefuls: (() => void)[] = [];
+  ons: Mapper<string, events> = new Mapper();
+  __: (pid?: idm) => string;
+  constructor(tag: string, attr: attr = {}, ...ctx: ctx[]) {
     //
+    this.__ = (pid: idm = new idm()) => {
+      let xid = pid.mid;
+      const _attr = new ATTR(attr, xid, this.statefuls);
+      const inner: string[] = [];
 
-    processATTR(attMap, doMap, this._attr);
+      processCtx(
+        ctx,
+        inner,
+        _attr.id ?? xid,
+        pid,
+        _attr,
+        this.statefuls,
+        this.ons,
+      );
 
-    const _xid = processCTX(this._ctx, _ctx, attr, doMap, pid, xid);
+      this.ons.ass(_attr.id ?? xid, _attr.on);
 
-    if (doMap.size) {
-      const id = attMap.get("id") ?? _xid;
-      attMap.set("id", id);
-      attr.set(id, doMap);
-    }
+      // ----------
+      const selfClosing = hasTag(tag);
+      const attributes = _attr.string;
+      const content = selfClosing ? "" : inner.join("");
+      const closing = selfClosing ? "" : `</${tag}>`;
 
-    let _attr_arr: string[] = [""];
-    attMap.forEach((v, k) => {
-      _attr_arr.push(v ? `${k}="${v}"` : k);
-    });
-
-    const name = this.tag;
-
-    let ctx = `<${name}${_attr_arr.join(" ")}>`;
-    if (!hasTag(name)) {
-      if (_ctx.length) ctx += _ctx.join("");
-      ctx += `</${name}>`;
-    }
-
-    return { ctx, attr };
+      return `<${tag}${attributes}>${content}${closing}`;
+    };
   }
 }
 
 export function dom(
-  tag: string | ((attr: attr, ctx: ctx[]) => Dom),
-  attr: attr | null = null,
+  tag: string | ((attr: any, ...ctx: any[]) => Dom),
+  attr: attr = {},
   ...ctx: ctx[]
-): Dom {
-  if (typeof tag === "function") {
-    return tag(attr ?? {}, ctx);
+) {
+  // Process the ctx here to lessen the time -- convert them all to flat array?
+  //
+  if (isFN(tag)) {
+    return tag(attr ?? {}, ...ctx);
   }
-  return new Dom(tag, attr, ...ctx);
+  // if ctx is array, flatten or use rest operator
+  return new Dom(tag, attr ?? {}, ...ctx);
 }
 
-export const frag = (r: attr, ...dom: ctx[]) => dom.flat();
+export const frag = (r: attr, ...dom: any[]) => dom;
 
 /*
 -------------------------
-RENDER
- - 
+
 -------------------------
 */
 
 function reRender(
   DE: Dom[],
-  instanceId: idm,
+  eid: string,
   _CTX: string[],
+  _STATES: (() => void)[],
+  _ON: Mapper<string, events>[],
   isCTX: boolean = false,
 ) {
   DE.forEach((element) => {
     if (isArr(element)) {
-      reRender(element, instanceId, _CTX, isCTX);
+      reRender(element, eid, _CTX, _STATES, _ON, isCTX);
     } else {
-      if (element instanceof Dom) {
-        const instance = element.__(instanceId);
-        XMAP.map(instance.attr);
-        if (isCTX) _CTX.push(instance.ctx);
-      } else {
-        if (isCTX) _CTX.push(element);
-      }
+      const { states, ctx, on } = getDomProps(element, eid);
+      _CTX.push(ctx);
+      _STATES.push(...states);
+      _ON.push(on);
     }
   });
-  return _CTX;
 }
 
 export class Render {
@@ -557,37 +318,40 @@ export class Render {
   ) {
     this.path = path ? path.replace(".tsx", ".js") : "";
   }
-  //   CLIENT
   async ctx(data = {}) {
     await this.dom(data, true);
   }
   async dom(data = {}, isCTX: boolean = false) {
-    const bodyElement = $(document.body);
+    const bodyElement = document.body;
     const bodyId = bodyElement.id;
-    const _CTX: string[] = [];
-    if (!bodyId) return;
-    const instanceId = new idm(bodyId + "_0");
+
     const appResult: Dom | Dom[] = await this.app(data);
-
-    if (isCTX) bodyElement.inner = "";
-
     const domElements = isArr(appResult) ? appResult : [appResult];
+    const _CTX: string[] = [];
+    const _STATES: (() => void)[] = [];
+    const _ON: Mapper<string, events>[] = [];
+    //
+    reRender(domElements, bodyId, _CTX, _STATES, _ON, isCTX);
 
-    reRender(domElements, instanceId, _CTX, isCTX);
+    if (isCTX) bodyElement.innerHTML = _CTX.join("");
 
-    if (isCTX) bodyElement.appendfirst = _CTX.join("");
-
-    trigger("render");
-    windowState();
+    requestAnimationFrame(() => {
+      //
+      _STATES.forEach((st) => st());
+      _ON.forEach((on) => handleEvents(on));
+      windowState();
+    });
   }
   async ssr(data = {}) {
     const TT = await this.app(data);
     const id = makeID(5);
-    const instanceId = new idm(id + "_0");
+    //
     const XDM = isArr(TT) ? TT : [TT];
     const _CTX: string[] = [];
+    const _STATES: (() => void)[] = [];
+    const _ON: Mapper<string, events>[] = [];
 
-    reRender(XDM, instanceId, _CTX, true);
+    reRender(XDM, id + "_0", _CTX, _STATES, _ON, true);
 
     return {
       script: `<script type="module">import x from "./${this.path}";x.dom(${ngify(data)});</script>`,
@@ -596,26 +360,50 @@ export class Render {
   }
 }
 
-export class Watcher<T> {
-  private value: T;
-  private handlers: ((value: T) => void)[] = [];
+// const NS = State("ulol");
+// const ctTEST = State("ct test");
+// const domTT = State(dom("div", {}, "hello dom"));
 
-  constructor(private watchFn: () => T) {
-    this.value = watchFn();
-  }
+// const AT: attr = {
+//   hello: "str",
+//   truthy: true,
+//   numb: 2,
+//   class: [1, 2, 3],
+//   lol: NS,
+//   // On should be on different object
+//   on: {
+//     click() {
+//       $$.p = "nice!!";
+//     },
+//     ready() {
+//       $$.p = "Ready";
+//     },
+//     watch() {
+//       return [
+//         (n: string, c: string, d: Dom) => {
+//           //
+//         },
+//         [NS, ctTEST, domTT],
+//       ];
+//     },
+//   },
+//   style: {
+//     color: "red",
+//     background: ["orange"],
+//     font: NS,
+//   },
+// };
 
-  on(callback: (value: T) => void, initialize: boolean = true) {
-    this.handlers.push(callback);
-    if (initialize) callback(this.value);
-    return this;
-  }
+// const DM = dom(
+//   "div",
+//   AT,
+//   123,
+//   "456",
+//   dom("span", { style: { color: NS } }, "im span", NS),
+//   ctTEST,
+//   domTT,
+// );
 
-  get update() {
-    const newValue = this.watchFn();
-    if (this.value !== newValue) {
-      this.value = newValue;
-      this.handlers.forEach((handler) => handler(newValue));
-    }
-    return;
-  }
-}
+// $$.p = DM.__();
+
+// $$.p = DM.ons;

@@ -1,5 +1,5 @@
 import { isFN, isNum, isStr, oAss, obj, oItems, V } from "./@";
-import { Dom, upMAP } from "./dom";
+import { Dom } from "./dom";
 
 type TElem = HTMLElement & InstanceType<typeof Element>;
 
@@ -242,23 +242,23 @@ class Eget<T extends TElem = HTMLElement> {
 
   // edit
   set append(val: any) {
-    if (val instanceof Dom) {
-      const vl = val.__();
-      upMAP(vl.attr);
-      this.e.insertAdjacentHTML("beforeend", vl.ctx);
-    } else {
-      this.e.insertAdjacentHTML("beforeend", val);
-    }
+    // if (val instanceof Dom) {
+    //   const vl = val.__();
+    //   upMAP(vl.attr);
+    //   this.e.insertAdjacentHTML("beforeend", vl.ctx);
+    // } else {
+    // }
+    this.e.insertAdjacentHTML("beforeend", val);
   }
   // edit
   set appendfirst(val: any) {
-    if (val instanceof Dom) {
-      const vl = val.__();
-      upMAP(vl.attr);
-      this.e.insertAdjacentHTML("afterbegin", vl.ctx);
-    } else {
-      this.e.insertAdjacentHTML("afterbegin", val);
-    }
+    // if (val instanceof Dom) {
+    //   const vl = val.__();
+    //   upMAP(vl.attr);
+    //   this.e.insertAdjacentHTML("afterbegin", vl.ctx);
+    // } else {
+    // }
+    this.e.insertAdjacentHTML("afterbegin", val);
   }
   set disabled(vl: boolean) {
     let tval = this.e;
@@ -268,11 +268,11 @@ class Eget<T extends TElem = HTMLElement> {
   }
   set inner(val: any) {
     let ctx = val;
-    if (val instanceof Dom) {
-      const vl = val.__();
-      upMAP(vl.attr);
-      ctx = vl.ctx;
-    }
+    // if (val instanceof Dom) {
+    //   const vl = val.__();
+    //   upMAP(vl.attr);
+    //   ctx = vl.ctx;
+    // }
     this.e.innerHTML = ctx;
   }
   set id(did: string) {

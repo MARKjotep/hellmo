@@ -1,16 +1,14 @@
 import { Dom } from "./dom";
+import { Stateful } from "./stateful";
 export declare class Router {
     private map;
     private pushState;
     url: string;
     attr: string;
     isSheet: boolean;
-    private _page;
-    private _nav;
-    private _title;
-    page: () => Dom;
-    nav: () => string;
-    title: () => string;
+    page: Stateful<Dom>;
+    nav: Stateful<string>;
+    title: Stateful<string>;
     private e?;
     constructor(r?: {
         pushState?: boolean;
