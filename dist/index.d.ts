@@ -25,8 +25,8 @@ declare class OZ {
     get keys(): string[];
     set(catt: CATT): this;
     push(_OZ: this): this;
-    stage(): void;
-    window(): void;
+    get stage(): this;
+    get start(): this;
     reset(id: string[]): this;
 }
 
@@ -113,7 +113,7 @@ declare const frag: (r: attr$1, ...dom: ctx[]) => ctx[];
 declare class Render {
     app: (data: any) => ctx | ctx[] | Promise<ctx | ctx[]>;
     path: string;
-    constructor(app: (data: any) => ctx | ctx[] | Promise<ctx | ctx[]>, path?: string);
+    constructor(app: (data: any) => ctx | ctx[] | Promise<ctx | ctx[]>, filePath?: string);
     ctx(data?: {}): Promise<void>;
     dom(data?: {}, isCTX?: boolean): Promise<void>;
     ssr(data?: {}): Promise<{

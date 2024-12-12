@@ -11,7 +11,7 @@ type fn<E, T> = (e?: E) => T;
 const pushDOM = (val: Dom | any) => {
   if (val instanceof Dom) {
     const { ctx, oz } = val.__();
-    WIZARD.push(oz).stage();
+    WIZARD.push(oz).stage;
     return ctx;
   }
   return val;
