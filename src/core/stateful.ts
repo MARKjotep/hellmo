@@ -132,6 +132,7 @@ export class Stateful<T> extends EventTarget {
   private states: stateMapped<any> = new Mapper();
   private _value: T;
   private listening = false;
+  private end?: () => void;
   private isNotWindow = isNotWindow();
   constructor(
     value: T,
@@ -157,17 +158,15 @@ export class Stateful<T> extends EventTarget {
   }
   get listen() {
     // Register the listener once
-
-    const listener = () => this.listen;
-
     const handler = (event: CustomEvent) => {
       handleMappedStates(this.states, event.detail);
-      if (!this.states.size) listener()();
+      if (!this.states.size) this.end?.();
     };
 
     // if the length of map size is 0, then remove listener and from States
     if (!this.listening) {
       this.addEventListener("updated", handler as any, this.options);
+      //
       this.listening = true;
     }
 
@@ -184,7 +183,7 @@ export class Stateful<T> extends EventTarget {
       keyInMap<statesM<T>>(id, this.states).set(entry, callback);
       // MapArray(id, this.states)!.push(callback);
       if (!this.isNotWindow && !this.listening) {
-        this.listen;
+        this.end = this.listen;
       }
       return () => {
         if (this.states.has(id)) this.states.get(id)?.delete(entry);

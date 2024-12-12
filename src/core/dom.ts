@@ -27,26 +27,10 @@ const TAGS = [
   "track",
   "wbr",
 ];
+const hasTag = (tag: string) => TAGS.includes(tag);
 type ctx = V | Dom | Stateful<V | Dom> | ctx[];
 type attr = baseAttr | obj<X3>;
 
-/*
--------------------------
-
--------------------------
-*/
-
-/*
--------------------------
-Separate the statefuls --
--------------------------
-*/
-
-/*
--------------------------
-Container of ON listeners and statefuls
--------------------------
-*/
 export const WIZARD = new OZ();
 
 const ctx_value = (cc: any, catt: CATT): string => {
@@ -81,10 +65,9 @@ class CTX {
     public tag: string,
     public ctx: ctx[],
   ) {
-    const selfClosing = this.hasTag(tag);
+    const selfClosing = hasTag(tag);
     this.closing = selfClosing ? "" : `</${tag}>`;
   }
-  private hasTag = (tag: string) => TAGS.includes(tag);
   //
   private getCallback(entry: string) {
     return function (this: Elements, arg: V | Dom) {
@@ -218,3 +201,4 @@ export class Render {
     };
   }
 }
+ 
