@@ -1,7 +1,7 @@
-import { isArr, obj } from "./core/@";
+import { isArr, oAss, obj, oItems, oKeys } from "./core/@";
 import { baseAttr, c_events, Elements, X3 } from "./core/attr";
 import { dom, frag, Dom, Render } from "./core/dom";
-import { $, CSSinT, Elem, STYLE } from "./core/elem";
+import { $, Elem } from "./core/elem";
 import { Router } from "./core/router";
 import { State } from "./core/stateful";
 export * from "./core/ui";
@@ -22,36 +22,8 @@ export class $$ {
 
 export * from "./core/storage.js";
 export { dom, frag, State, $, Dom, Render, Router };
-/*
--------------------------
--------------------------
-*/
-// if (typeof window === "undefined") {
-//   Object.assign(global, {
-//     window: {
-//       location: {
-//         pathname: "",
-//       },
-//     },
-//     document: {
-//       querySelector: () => ({}),
-//       querySelectorAll: () => ({}),
-//     },
-//     location: {
-//       location: {
-//         pathname: "",
-//       },
-//     },
-//     localStorage: {},
-//     sessionStorage: {},
-//     navigator: {},
-//     history: {},
-//     screen: {},
-//     performance: {},
-//   });
-// }
 
-/*
+/*s
 -------------------------
 loadCSS
 For loop
@@ -154,9 +126,57 @@ export function preload(url: string, as: string, type: string): string {
 
 /*
 -------------------------
-
+Attributes
 -------------------------
 */
+
+const reClass = (a: attr, classes: string[]) => {
+  const _cl: any[] = classes;
+  if (a?.class) {
+    _cl.push(...(isArr(a.class) ? a.class : [a.class]));
+  }
+  return _cl.filter((cf) => cf);
+};
+
+const reObj = (k: obj<any>, isNumb: boolean = true) => {
+  return oItems(k).reduce<obj<any>>((a, [_k, _v]) => {
+    const inb = isNumb ? numberToRem(_v) : _v;
+    inb && (a[_k] = inb);
+    return a;
+  }, {});
+};
+
+const numberToRem = (sz: number | string | undefined) => {
+  return sz !== undefined
+    ? typeof sz == "number"
+      ? sz + "rem"
+      : sz
+    : undefined;
+};
+
+export const reATTR = (
+  a: attr,
+  options: {
+    exclude?: string[];
+    style?: obj<any>;
+    classes?: string[];
+  } = {},
+) => {
+  const { exclude, style, classes } = options;
+
+  classes && classes.length && (a.class = reClass(a, classes));
+
+  oKeys(a).forEach((k) => {
+    if (exclude && exclude.includes(k)) {
+      delete a[k as keyof typeof a];
+    }
+  });
+
+  if (style && oKeys(style).length) {
+    !a.style && (a.style = {});
+    oAss(a.style, style);
+  }
+};
 
 // -------------------------
 

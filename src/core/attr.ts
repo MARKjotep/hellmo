@@ -1,15 +1,5 @@
-import {
-  $$,
-  isArr,
-  isBool,
-  isDict,
-  isObj,
-  keyInMap,
-  Mapper,
-  obj,
-  oItems,
-  V,
-} from "./@";
+import { $$, isArr, isBool, isDict, isFN, isObj, ngify, oItems, V } from "./@";
+import { CATT } from "./catt";
 
 import { Stateful } from "./stateful";
 
@@ -39,103 +29,70 @@ export interface baseAttr {
   class?: X3;
 }
 
-const keyInAttrMap = (key: string, map: Mapper<string, string[]>) => {
-  if (!map.has(key)) map.set(key, []);
-  return map.get(key);
-};
+/*
+-------------------------
 
-const pushToMap = (
-  k: string,
-  v: any,
-  map: Mapper<string, string[]>,
-  pref?: string,
-) => {
-  const mapped = keyInAttrMap(pref ?? k, map)!;
-  mapped.push(pref ? `${k}:${v}` : v);
-};
-
-const getStateCallback = (attr: string, pre?: string) => {
-  switch (pre ?? attr) {
-    case "style":
-      return function (this: Elements, e: CustomEvent) {
-        this.style.setProperty(attr, e.detail);
-      };
-    default:
-      return function (this: HTMLElement, e: CustomEvent) {
-        this.setAttribute(attr, e.detail);
-      };
-  }
-};
-
-const toAttr = (
-  attr: Exclude<baseAttr, events>,
-  id: string,
-  map: Mapper<string, string[]>,
-  statefuls: (() => void)[],
-  pre?: string,
-) => {
-  //
-  const processValue = (k: string, v: any) => {
-    if (isArr(v)) {
-      pushToMap(k, v.join(" "), map, pre);
-    } else if (v instanceof Stateful) {
-      const cb = getStateCallback(k, pre);
-      const entry = pre ? `${pre}_${k}` : k;
-
-      statefuls.push(v.call(cb, (attr.id ??= id), entry));
-
-      processValue(k, v.value);
-    } else if (isObj(v)) {
-      isDict(v) && toAttr(v, id, map, statefuls, k);
-      if ("id" in v) {
-        attr.id ??= v.id as string;
-      }
-    } else {
-      pushToMap(k, isBool(v) ? (v ? "" : "false") : String(v), map, pre);
+-------------------------
+*/
+const attr_value = (v: any): string => {
+  if (isArr(v)) {
+    return v.join(" ");
+  } else if (isObj(v)) {
+    if (isDict(v)) {
+      return ngify(v);
     }
-  };
-  //
-  oItems(attr).forEach(
-    ([k, v]) => !["on", "id"].includes(k) && processValue(k, v),
-  );
+  } else if (isFN(v)) {
+    return attr_value((v as any)());
+  } else if (v !== undefined && v !== null) {
+    return isBool(v) ? (v ? "" : "false") : String(v);
+  }
+  return "";
 };
 
 export class ATTR {
-  /*
-    -------------------------
-    save the
-    Stateful, CB and ID -- to be
-    -------------------------
-    */
-  //   Immediately register the callback with ID
-  on: events = {};
-  attr: Mapper<string, string[]> = new Mapper();
-  constructor(
-    attr: baseAttr,
-    private _id: string,
-    private statefuls: (() => void)[] = [],
-  ) {
-    this.on = attr.on ?? {};
-    toAttr(attr, _id, this.attr, this.statefuls);
-    if (attr.id) {
-      this.attr.set("id", [attr.id]);
-    }
-  }
+  constructor(public attr: attr = {}) {}
 
-  get id(): string | undefined {
-    return this.attr.get("id")?.join("");
-  }
-  set id(id: string) {
-    if (!this.attr.has("id")) {
-      this.attr.set("id", [id]);
+  private getCallback(attr: string, pre?: string) {
+    switch (pre ?? attr) {
+      case "style":
+        return function (this: Elements, e: string) {
+          this.style.setProperty(attr, e);
+        };
+      default:
+        return function (this: HTMLElement, e: any) {
+          this.setAttribute(attr, e);
+        };
     }
   }
-  get string() {
-    let _attr_arr: string[] = [""];
-    this.attr.forEach((v, k) => {
-      const vv = v.join(";");
-      _attr_arr.push(vv ? `${k}="${vv}"` : k);
+  get(catt: CATT, attr: attr = this.attr, pre?: string) {
+    //
+    const processValue = (k: string, v: any) => {
+      //
+      if (isArr(v)) {
+        catt.attr_push(k, attr_value(v));
+      } else if (v instanceof Stateful) {
+        const entry = pre ? `${pre}_${k}` : k;
+        //
+
+        catt.states.push(v.call(this.getCallback(k, pre), entry));
+
+        processValue(k, v.value);
+        //
+      } else if (isObj(v)) {
+        if (isDict(v) && !pre) {
+          this.get(catt, v, k);
+        }
+      } else {
+        catt.attr_push(k, attr_value(v), pre);
+      }
+    };
+
+    oItems(attr).forEach(([k, v]) => {
+      if (["on"].includes(k)) {
+        isObj(attr.on) && catt.events.obj(attr.on);
+      } else {
+        processValue(k, v);
+      }
     });
-    return _attr_arr.join(" ");
   }
 }

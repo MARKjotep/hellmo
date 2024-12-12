@@ -1,4 +1,5 @@
-import { Mapper, V } from "./@";
+import { V } from "./@";
+import { CATT } from "./catt";
 import { Stateful } from "./stateful";
 type X2 = V | V[];
 export type X3 = X2 | Stateful<X2>;
@@ -22,13 +23,9 @@ export interface baseAttr {
     class?: X3;
 }
 export declare class ATTR {
-    private _id;
-    private statefuls;
-    on: events;
-    attr: Mapper<string, string[]>;
-    constructor(attr: baseAttr, _id: string, statefuls?: (() => void)[]);
-    get id(): string | undefined;
-    set id(id: string);
-    get string(): string;
+    attr: attr;
+    constructor(attr?: attr);
+    private getCallback;
+    get(catt: CATT, attr?: attr, pre?: string): void;
 }
 export {};

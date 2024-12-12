@@ -2,13 +2,48 @@ interface obj<T> {
     [Key: string]: T;
 }
 type V = string | number | boolean;
+declare class idm {
+    private _c;
+    private _id;
+    constructor(mid?: string);
+    get id(): string;
+    get mid(): string;
+}
 declare class Mapper<K, V> extends Map<K, V> {
     obj(obj?: object | null): void;
-    map(map: Map<K, V>): void;
+    map(map: Mapper<K, V>): void;
     ass<T>(key: K, obj: T): void;
 }
 
-type Elements$1 = HTMLElementTagNameMap[keyof HTMLElementTagNameMap];
+declare class OZ {
+    private events;
+    private states;
+    private winStates;
+    private resetST;
+    private resetEV;
+    constructor();
+    get keys(): string[];
+    set(catt: CATT): this;
+    push(_OZ: this): this;
+    stage(): void;
+    window(): void;
+    reset(id: string[]): this;
+}
+
+declare class CATT {
+    xid: string;
+    IDM: idm;
+    map: Mapper<string, string[]>;
+    states: ((id: string) => () => void)[];
+    events: Mapper<string, (...arg: any) => any>;
+    OZ: OZ;
+    constructor(xid: string, IDM?: idm, _OZ?: OZ);
+    attr_push(key: string, val: any, pre?: string): void;
+    get attr(): string;
+    set id(id: string);
+    get id(): string | undefined;
+}
+
 declare class Stateful<T> extends EventTarget {
     private options?;
     private states;
@@ -19,14 +54,13 @@ declare class Stateful<T> extends EventTarget {
     get value(): T;
     set value(newValue: T);
     get listen(): () => void;
-    call<Q>(callback: (this: Elements$1, arg: T) => Q, id: string, entry: string): () => void;
-    reset(id: string): void;
+    call<Q>(callback: (this: Elements, arg: T) => Q, entry: string): (id: string) => () => void;
 }
 declare function State<T>(value: T): Stateful<T>;
 
 type X2 = V | V[];
 type X3 = X2 | Stateful<X2>;
-type CSSinT$1 = {
+type CSSinT = {
     [P in keyof CSSStyleDeclaration]?: X3;
 } & {
     [key: string]: X3;
@@ -40,31 +74,46 @@ interface c_events {
     popstate?: (this: Elements, e: PopStateEvent) => void;
 }
 interface baseAttr {
-    style?: CSSinT$1;
+    style?: CSSinT;
     on?: events;
     id?: string;
     class?: X3;
 }
+declare class ATTR {
+    attr: attr;
+    constructor(attr?: attr);
+    private getCallback;
+    get(catt: CATT, attr?: attr, pre?: string): void;
+}
 
-type ctx = V | Dom | Stateful<V | Dom>;
-declare class idm {
-    private _c;
-    private id;
-    constructor(mid?: string);
-    get mid(): string;
+type ctx = V | Dom | Stateful<V | Dom> | ctx[];
+type attr$1 = baseAttr | obj<X3>;
+declare class CTX {
+    tag: string;
+    ctx: ctx[];
+    closing: string;
+    constructor(tag: string, ctx: ctx[]);
+    private hasTag;
+    private getCallback;
+    private process;
+    get(catt: CATT): string;
 }
 declare class Dom {
-    statefuls: (() => void)[];
-    ons: Mapper<string, events>;
-    __: (pid?: idm) => string;
-    constructor(tag: string, attr?: attr, ...ctx: ctx[]);
+    tag: string;
+    attr: ATTR;
+    ctx: CTX;
+    constructor(tag: string, attr?: attr$1, ...ctx: ctx[]);
+    __(pid?: idm): {
+        ctx: string;
+        oz: OZ;
+    };
 }
-declare function dom(tag: string | ((attr: any, ...ctx: any[]) => Dom), attr?: attr, ...ctx: ctx[]): Dom;
-declare const frag: (r: attr, ...dom: any[]) => any[];
+declare function dom(tag: string | ((attr: any, ...ctx: any[]) => Dom), attr?: attr$1, ...ctx: ctx[]): Dom;
+declare const frag: (r: attr$1, ...dom: ctx[]) => ctx[];
 declare class Render {
-    app: (data: any) => Dom | Promise<Dom>;
+    app: (data: any) => ctx | ctx[] | Promise<ctx | ctx[]>;
     path: string;
-    constructor(app: (data: any) => Dom | Promise<Dom>, path?: string);
+    constructor(app: (data: any) => ctx | ctx[] | Promise<ctx | ctx[]>, path?: string);
     ctx(data?: {}): Promise<void>;
     dom(data?: {}, isCTX?: boolean): Promise<void>;
     ssr(data?: {}): Promise<{
@@ -74,10 +123,6 @@ declare class Render {
 }
 
 type TElem = HTMLElement & InstanceType<typeof Element>;
-type STYLE = V | (<T extends TElem = HTMLElement>(e: T) => V);
-type CSSinT = {
-    [P in keyof CSSStyleDeclaration]?: STYLE;
-};
 type kf = KeyframeAnimationOptions;
 type KFType = (CSSinT | obj<V>)[] | CSSinT | obj<V>;
 type fn<E, T> = (e?: E) => T;
@@ -245,6 +290,11 @@ declare class $$ {
 declare function loadCSS(url: string[]): Promise<void>;
 declare function loadCSS(url: string[] | string, importmetaurl?: string): Promise<void>;
 declare function preload(url: string, as: string, type: string): string;
+declare const reATTR: (a: attr, options?: {
+    exclude?: string[];
+    style?: obj<any>;
+    classes?: string[];
+}) => void;
 declare global {
     type events = {
         [P in keyof GlobalEventHandlersEventMap]?: (this: Elements, e: GlobalEventHandlersEventMap[P]) => void;
@@ -420,4 +470,4 @@ declare global {
     }
 }
 
-export { $, $$, ColorScheme, Dom, Render, Router, State, UI, type _$, dom, eventStream, frag, loadCSS, local, preload, session };
+export { $, $$, ColorScheme, Dom, Render, Router, State, UI, type _$, dom, eventStream, frag, loadCSS, local, preload, reATTR, session };

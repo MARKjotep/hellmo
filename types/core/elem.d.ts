@@ -1,9 +1,6 @@
 import { obj, V } from "./@";
+import { CSSinT } from "./attr";
 type TElem = HTMLElement & InstanceType<typeof Element>;
-export type STYLE = V | (<T extends TElem = HTMLElement>(e: T) => V);
-export type CSSinT = {
-    [P in keyof CSSStyleDeclaration]?: STYLE;
-};
 type kf = KeyframeAnimationOptions;
 type KFType = (CSSinT | obj<V>)[] | CSSinT | obj<V>;
 type fn<E, T> = (e?: E) => T;

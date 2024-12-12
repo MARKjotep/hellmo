@@ -22,9 +22,16 @@ export declare function Cached<T extends {
 export declare class $$ {
     static set p(a: any);
 }
+export declare class idm {
+    private _c;
+    private _id;
+    constructor(mid?: string);
+    get id(): string;
+    get mid(): string;
+}
 export declare class Mapper<K, V> extends Map<K, V> {
     obj(obj?: object | null): void;
-    map(map: Map<K, V>): void;
+    map(map: Mapper<K, V>): void;
     ass<T>(key: K, obj: T): void;
 }
 export declare const keyInMap: <T>(id: string, map: Mapper<string, any>) => T;

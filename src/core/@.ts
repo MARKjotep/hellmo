@@ -90,6 +90,29 @@ export class $$ {
   }
 }
 
+export class idm {
+  private _c = 0;
+  private _id = "";
+  constructor(mid?: string) {
+    this._c = 0;
+    this._id = mid ?? makeID(5);
+    if (mid?.includes("-")) {
+      const [prefix, lastPart] = [
+        mid.split("-").slice(0, -1).join("-"),
+        mid.split("-").slice(-1)[0],
+      ];
+      this._id = prefix;
+      this._c = isNumber(lastPart) ? parseInt(lastPart) : 0;
+    }
+  }
+  get id() {
+    return this._id + "-" + this._c;
+  }
+  get mid() {
+    return this._id + "-" + ++this._c;
+  }
+}
+
 /**
  * A custom Map implementation that provides additional utility methods for working with objects and maps.
  *
@@ -100,7 +123,7 @@ export class Mapper<K, V> extends Map<K, V> {
   obj(obj?: object | null) {
     obj && oItems(obj).forEach(([k, v]) => this.set(k as K, v));
   }
-  map(map: Map<K, V>) {
+  map(map: Mapper<K, V>) {
     map.forEach((v, k) => {
       if (isObj(v)) {
         this.ass(k, v);

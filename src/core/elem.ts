@@ -1,16 +1,21 @@
 import { isFN, isNum, isStr, oAss, obj, oItems, V } from "./@";
-import { Dom } from "./dom";
+import { CSSinT } from "./attr";
+import { WIZARD, Dom } from "./dom";
 
 type TElem = HTMLElement & InstanceType<typeof Element>;
-
-export type STYLE = V | (<T extends TElem = HTMLElement>(e: T) => V);
-export type CSSinT = {
-  [P in keyof CSSStyleDeclaration]?: STYLE;
-};
 
 type kf = KeyframeAnimationOptions;
 type KFType = (CSSinT | obj<V>)[] | CSSinT | obj<V>;
 type fn<E, T> = (e?: E) => T;
+
+const pushDOM = (val: Dom | any) => {
+  if (val instanceof Dom) {
+    const { ctx, oz } = val.__();
+    WIZARD.push(oz).stage();
+    return ctx;
+  }
+  return val;
+};
 
 class anim {
   opt: kf;
@@ -242,23 +247,11 @@ class Eget<T extends TElem = HTMLElement> {
 
   // edit
   set append(val: any) {
-    // if (val instanceof Dom) {
-    //   const vl = val.__();
-    //   upMAP(vl.attr);
-    //   this.e.insertAdjacentHTML("beforeend", vl.ctx);
-    // } else {
-    // }
-    this.e.insertAdjacentHTML("beforeend", val);
+    this.e.insertAdjacentHTML("beforeend", pushDOM(val));
   }
   // edit
   set appendfirst(val: any) {
-    // if (val instanceof Dom) {
-    //   const vl = val.__();
-    //   upMAP(vl.attr);
-    //   this.e.insertAdjacentHTML("afterbegin", vl.ctx);
-    // } else {
-    // }
-    this.e.insertAdjacentHTML("afterbegin", val);
+    this.e.insertAdjacentHTML("afterbegin", pushDOM(val));
   }
   set disabled(vl: boolean) {
     let tval = this.e;
@@ -267,13 +260,7 @@ class Eget<T extends TElem = HTMLElement> {
     }
   }
   set inner(val: any) {
-    let ctx = val;
-    // if (val instanceof Dom) {
-    //   const vl = val.__();
-    //   upMAP(vl.attr);
-    //   ctx = vl.ctx;
-    // }
-    this.e.innerHTML = ctx;
+    this.e.innerHTML = pushDOM(val);
   }
   set id(did: string) {
     this.e.id = did;

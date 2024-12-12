@@ -1,9 +1,11 @@
 import {
   $$,
+  idm,
   isArr,
   isNotWindow,
   isNull,
   isObj,
+  isUndefined,
   keyInMap,
   Mapper,
   ngify,
@@ -11,6 +13,7 @@ import {
   oLen,
   oVals,
 } from "./@";
+import { Elements } from "./attr";
 /*
 -------------------------
 TYPES
@@ -25,21 +28,12 @@ type Changes = {
   removed: Record<string, any>;
   modified: Record<string, { old: any; new: any }>;
 };
-type Elements = HTMLElementTagNameMap[keyof HTMLElementTagNameMap];
 
 /*
 -------------------------
 
 -------------------------
 */
-
-const setEntryCallback = <T, Q>(
-  state: Mapper<string, (arg: T) => any>,
-  entry: string,
-  callback: (arg: T) => Q,
-) => {
-  state.set(entry, callback);
-};
 
 const compareObjects = <T extends object>(
   oldObj: T,
@@ -126,10 +120,8 @@ const handleMappedStates = (states: stateMapped<any>, value: any) => {
     const D = getElementById(key);
     if (!D) {
       states.delete(key);
-      // unload the on listeners?
       continue;
     }
-
     val.forEach((v) => {
       v.call(D, value);
     });
@@ -153,7 +145,7 @@ export class Stateful<T> extends EventTarget {
   }
   set value(newValue: T) {
     //
-    if (!newValue) return;
+    if (isNull(newValue) || isUndefined(newValue)) return;
 
     if (isObj(this._value)) {
       const changes = compareObjects(this._value, newValue);
@@ -161,16 +153,16 @@ export class Stateful<T> extends EventTarget {
     } else if (this._value === newValue) return;
 
     this._value = newValue;
-    this.dispatchEvent(new CustomEvent("updated", { detail: newValue }));
+    this.dispatchEvent(new CustomEvent("updated", { detail: this._value }));
   }
   get listen() {
     // Register the listener once
-    const states = this.states;
+
     const listener = () => this.listen;
 
     const handler = (event: CustomEvent) => {
-      handleMappedStates(states, event.detail);
-      if (!states.size) listener()();
+      handleMappedStates(this.states, event.detail);
+      if (!this.states.size) listener()();
     };
 
     // if the length of map size is 0, then remove listener and from States
@@ -186,22 +178,27 @@ export class Stateful<T> extends EventTarget {
       this.listening = false;
     };
   }
-  call<Q>(callback: (this: Elements, arg: T) => Q, id: string, entry: string) {
-    return () => {
+  call<Q>(callback: (this: Elements, arg: T) => Q, entry: string) {
+    return (id: string) => {
       // Call this when ready to push -- add entry to only keep one updatable element --
-      //
       keyInMap<statesM<T>>(id, this.states).set(entry, callback);
       // MapArray(id, this.states)!.push(callback);
       if (!this.isNotWindow && !this.listening) {
         this.listen;
       }
+      return () => {
+        if (this.states.has(id)) this.states.get(id)?.delete(entry);
+      };
     };
-  }
-  reset(id: string) {
-    if (this.states.has(id)) this.states.delete(id);
   }
 }
 
 export function State<T>(value: T) {
   return new Stateful(value);
 }
+
+/*
+-------------------------
+dom, ctx, style, etc
+-------------------------
+*/

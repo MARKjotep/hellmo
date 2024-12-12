@@ -15,6 +15,11 @@ export { dom, frag, State, $, Dom, Render, Router };
 export declare function loadCSS(url: string[]): Promise<void>;
 export declare function loadCSS(url: string[] | string, importmetaurl?: string): Promise<void>;
 export declare function preload(url: string, as: string, type: string): string;
+export declare const reATTR: (a: attr, options?: {
+    exclude?: string[];
+    style?: obj<any>;
+    classes?: string[];
+}) => void;
 declare global {
     type events = {
         [P in keyof GlobalEventHandlersEventMap]?: (this: Elements, e: GlobalEventHandlersEventMap[P]) => void;
