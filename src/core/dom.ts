@@ -1,7 +1,19 @@
-import { $$, idm, isArr, isFN, isObj, makeID, ngify, obj, V } from "./@";
+import {
+  $$,
+  idm,
+  isArr,
+  isFN,
+  isNotWindow,
+  isObj,
+  makeID,
+  ngify,
+  obj,
+  V,
+} from "./@";
 import { ATTR, baseAttr, Elements, X3 } from "./attr";
 import { CATT } from "./catt";
 import { OZ } from "./oz";
+import { Router } from "./router";
 import { Stateful } from "./stateful";
 
 /*
@@ -28,10 +40,11 @@ const TAGS = [
   "wbr",
 ];
 const hasTag = (tag: string) => TAGS.includes(tag);
+//
 type ctx = V | Dom | Stateful<V | Dom> | ctx[];
 type attr = baseAttr | obj<X3>;
 
-export const WIZARD = new OZ();
+export const Wizard = new OZ();
 
 const ctx_value = (cc: any, catt: CATT): string => {
   if (isArr(cc)) {
@@ -77,10 +90,8 @@ class CTX {
         if (this.innerHTML !== ctx) {
           this.innerHTML = ctx;
           //
-          const keys = catt.OZ.keys;
-          if (keys.length) {
-            WIZARD.reset(keys).push(catt.OZ).stage;
-          }
+          Wizard.RPS(catt.OZ);
+
           // reset the id from mainOZ then combine new catt.OZ
         }
       }
@@ -125,10 +136,10 @@ class CTX {
 }
 
 export class Dom {
-  attr: ATTR;
-  ctx: CTX;
+  private attr: ATTR;
+  private ctx: CTX;
   constructor(
-    public tag: string,
+    private tag: string,
     attr: attr = {},
     ...ctx: ctx[]
   ) {
@@ -164,14 +175,20 @@ export function dom(
 
 export const frag = (r: attr, ...dom: ctx[]) => dom;
 
+/*
+-------------------------
+
+-------------------------
+*/
+//
+interface renderConfig {
+  importMeta?: ImportMeta;
+  router?: Router;
+}
+
 export class Render {
   path: string = "";
-  constructor(
-    public app: (data: any) => ctx | ctx[] | Promise<ctx | ctx[]>,
-    filePath?: string,
-  ) {
-    this.path = filePath ? filePath.replace(".tsx", ".js") : "";
-  }
+  constructor(public app: (data: any) => ctx | ctx[] | Promise<ctx | ctx[]>) {}
   async ctx(data = {}) {
     await this.dom(data, true);
   }
@@ -184,10 +201,10 @@ export class Render {
       bodyElement.insertAdjacentHTML("afterbegin", ctx);
     }
 
-    WIZARD.push(oz);
+    Wizard.push(oz);
     //
     requestAnimationFrame(() => {
-      WIZARD.start;
+      Wizard.start;
     });
   }
   async ssr(data = {}) {
@@ -196,9 +213,25 @@ export class Render {
     const { ctx } = DM.__(new idm(id + "-0"));
     //
     return {
+      head: ``,
       script: `<script type="module">import x from "./${this.path}";x.dom(${ngify(data)});</script>`,
       body: `<body  id="${id}">${ctx}</body>`,
     };
   }
+  config(config: renderConfig) {
+    const { importMeta, router } = config;
+    this.path = importMeta?.file ? importMeta.file.replace(".tsx", ".js") : "";
+
+    /*
+    -------------------------
+    todo
+    get router - head and save in render class
+    -------------------------
+    */
+
+    return this;
+  }
+  data(data = {}) {
+    return this;
+  }
 }
- 

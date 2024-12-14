@@ -15,7 +15,9 @@ export type CSSinT = {
 export type Elements = HTMLElementTagNameMap[keyof HTMLElementTagNameMap];
 
 export interface c_events {
-  watch?: (this: Elements) => [(...args: any[]) => void, Stateful<any>[]];
+  watch?: (
+    this: Elements,
+  ) => [(...args: any[]) => void, Stateful<any>[], boolean?];
   ready?: (this: Elements) => void;
   resize?: (this: Elements, e: UIEvent) => void;
   unload?: (this: Elements, e: BeforeUnloadEvent) => void;

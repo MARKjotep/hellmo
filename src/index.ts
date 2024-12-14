@@ -1,9 +1,9 @@
 import { isArr, oAss, obj, oItems, oKeys } from "./core/@";
 import { baseAttr, c_events, Elements, X3 } from "./core/attr";
-import { dom, frag, Dom, Render } from "./core/dom";
+import { dom, frag, Dom, Render, Wizard } from "./core/dom";
 import { $, Elem } from "./core/elem";
-import { Router } from "./core/router";
-import { State } from "./core/stateful";
+import { Router, HtmlHead } from "./core/router";
+import { State, Stateful } from "./core/stateful";
 export * from "./core/ui";
 
 export type _$ = Elem | undefined;
@@ -373,4 +373,35 @@ declare global {
       view: attr;
     }
   }
+}
+
+/*
+-------------------------
+Make the indicator unique? maybe
+-------------------------
+*/
+
+if (typeof window === "undefined") {
+  Object.assign(global, {
+    window: {
+      location: {
+        pathname: "",
+      },
+    },
+    document: {
+      querySelector: () => ({}),
+      querySelectorAll: () => ({}),
+    },
+    location: {
+      location: {
+        pathname: "",
+      },
+    },
+    localStorage: {},
+    sessionStorage: {},
+    navigator: {},
+    history: {},
+    screen: {},
+    performance: {},
+  });
 }

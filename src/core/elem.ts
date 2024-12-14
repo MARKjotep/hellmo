@@ -1,6 +1,7 @@
-import { isFN, isNum, isStr, oAss, obj, oItems, V } from "./@";
+import { $$, idm, isFN, isNum, isStr, oAss, obj, oItems, V } from "./@";
 import { CSSinT } from "./attr";
-import { WIZARD, Dom } from "./dom";
+import { Wizard, Dom } from "./dom";
+import { OZ } from "./oz";
 
 type TElem = HTMLElement & InstanceType<typeof Element>;
 
@@ -8,18 +9,19 @@ type kf = KeyframeAnimationOptions;
 type KFType = (CSSinT | obj<V>)[] | CSSinT | obj<V>;
 type fn<E, T> = (e?: E) => T;
 
-const pushDOM = (val: Dom | any) => {
+const pushDOM = (
+  val: Dom | string,
+  pid?: string,
+): { ctx: string; oz: OZ | undefined } => {
   if (val instanceof Dom) {
-    const { ctx, oz } = val.__();
-    WIZARD.push(oz).stage;
-    return ctx;
+    return val.__(new idm(pid));
   }
-  return val;
+  return { ctx: val, oz: undefined };
 };
 
 class anim {
   opt: kf;
-  constructor(public e: Elem) {
+  constructor(private e: Elem) {
     this.opt = { duration: 500, easing: "ease-in-out", fill: "forwards" };
   }
   animate(keyframes: CSSinT[] | CSSinT, options: kf = {}) {
@@ -107,7 +109,7 @@ class Eget<T extends TElem = HTMLElement> {
     if (this.query) {
       const QD = document.querySelectorAll(this.query);
       if (QD.length) {
-        return Array.from(QD).map((a) => $(a as T));
+        return Array.from(QD).map((a) => a as T);
       }
     }
     return [];
@@ -156,6 +158,9 @@ class Eget<T extends TElem = HTMLElement> {
     this.e.focus();
     return this;
   }
+  get href() {
+    return (this.e as unknown as HTMLAnchorElement)?.href ?? "";
+  }
   get id() {
     return this.e.id;
   }
@@ -175,6 +180,9 @@ class Eget<T extends TElem = HTMLElement> {
       return new Elem(prtn);
     }
     return undefined;
+  }
+  get path() {
+    return (this.e as unknown as HTMLAnchorElement)?.pathname ?? "";
   }
   get rect() {
     return this.e.getBoundingClientRect();
@@ -247,11 +255,22 @@ class Eget<T extends TElem = HTMLElement> {
 
   // edit
   set append(val: any) {
-    this.e.insertAdjacentHTML("beforeend", pushDOM(val));
+    const { ctx, oz } = pushDOM(val, this.id);
+    this.e.insertAdjacentHTML("beforeend", ctx);
+    Wizard.RPS(oz);
   }
   // edit
   set appendfirst(val: any) {
-    this.e.insertAdjacentHTML("afterbegin", pushDOM(val));
+    const { ctx, oz } = pushDOM(val, this.id);
+    this.e.insertAdjacentHTML("afterbegin", ctx);
+    Wizard.RPS(oz);
+  }
+  set inner(val: any) {
+    // get the parent first
+    $$.p = this.id;
+    const { ctx, oz } = pushDOM(val, this.id + "-0");
+    this.e.innerHTML = ctx;
+    Wizard.RPS(oz);
   }
   set disabled(vl: boolean) {
     let tval = this.e;
@@ -259,9 +278,7 @@ class Eget<T extends TElem = HTMLElement> {
       tval.disabled = vl;
     }
   }
-  set inner(val: any) {
-    this.e.innerHTML = pushDOM(val);
-  }
+
   set id(did: string) {
     this.e.id = did;
   }

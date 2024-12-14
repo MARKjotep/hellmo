@@ -49,6 +49,7 @@ declare class Stateful<T> extends EventTarget {
     private states;
     private _value;
     private listening;
+    private end?;
     private isNotWindow;
     constructor(value: T, options?: AddEventListenerOptions | undefined);
     get value(): T;
@@ -93,7 +94,6 @@ declare class CTX {
     ctx: ctx[];
     closing: string;
     constructor(tag: string, ctx: ctx[]);
-    private hasTag;
     private getCallback;
     private process;
     get(catt: CATT): string;

@@ -1,7 +1,7 @@
 import { $$, idm, keyInMap, keyInMapArray, Mapper, obj, oItems } from "./@";
 import { Elements } from "./attr";
 import { CATT } from "./catt";
-import { getElementById, Stateful } from "./stateful";
+import { getElementById, Stateful, ElementIds } from "./stateful";
 
 const listener = (E: Elements, type: string, fn: (...arg: any) => void) => {
   E.addEventListener(type, fn);
@@ -11,7 +11,7 @@ const listener = (E: Elements, type: string, fn: (...arg: any) => void) => {
 };
 
 type winState = obj<(e?: HTMLElement, t?: EventTarget | null) => void>;
-type watchType = [(...args: any[]) => void, Stateful<any>[]];
+type watchType = [(...args: any[]) => void, Stateful<any>[], boolean?];
 
 export class OZ {
   private events: Mapper<string, Mapper<string, (...arg: any) => any>> =
@@ -51,14 +51,14 @@ export class OZ {
   }
   get stage() {
     // state events;
-
     this.events.forEach((ev, id) => {
+      this.events.delete(id);
+      //
       const E = getElementById(id);
       if (!E) {
         this.events.delete(id);
         return;
       }
-
       ev.forEach((event, type) => {
         switch (type) {
           case "ready":
@@ -70,17 +70,21 @@ export class OZ {
             this.winStates.set(id, { [type]: event });
             break;
           case "watch":
-            const [cb, statefuls] = event() as watchType;
+            const [cb, statefuls, ini] = event.apply(E) as watchType;
             const smap = () => statefuls.map((st) => st.value);
+
             const handler = () => {
               cb(...smap());
             };
+
+            if (ini) handler();
             statefuls.forEach((st) => {
               keyInMapArray<((id: string) => () => void)[]>(
                 id,
                 this.states,
               ).push(st.call(handler, id + "_watch"));
             });
+
             break;
           default:
             keyInMapArray<(() => void)[]>(id, this.resetEV).push(
@@ -92,15 +96,15 @@ export class OZ {
 
     // stage states
 
-    this.states.forEach((fn, val) => {
+    this.states.forEach((fn, id) => {
+      this.states.delete(id);
       fn.forEach((f) => {
-        keyInMapArray<(() => void)[]>(val, this.resetST).push(f(val));
+        keyInMapArray<(() => void)[]>(id, this.resetST).push(f(id));
       });
     });
 
     // Reset the values
-    this.events = new Mapper();
-    this.states = new Mapper();
+
     return this;
   }
   // call once
@@ -128,7 +132,6 @@ export class OZ {
 
     return this;
   }
-
   reset(id: string[]) {
     id.forEach((st) => {
       this.winStates.delete(st);
@@ -138,7 +141,33 @@ export class OZ {
       this.resetEV.get(st)?.forEach((f) => {
         f();
       });
+
+      // delete after reset
+      this.resetST.delete(st);
+      this.resetEV.delete(st);
     });
+
+    // check the elements that are not connected??
+    return this;
+  }
+  /*
+  -------------------------
+  reset - push - stage
+  -------------------------
+  */
+  RPS(oz?: this) {
+    if (oz) {
+      const zk = oz.keys;
+      if (zk.length) this.reset(zk).push(oz).stage;
+      //
+      const ids: string[] = [];
+      ElementIds.forEach((e, id) => {
+        if (!e.isConnected) {
+          ids.push(id);
+        }
+      });
+      this.reset(ids);
+    }
     return this;
   }
 }

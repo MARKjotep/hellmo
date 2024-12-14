@@ -2,6 +2,7 @@ import {
   $$,
   idm,
   isArr,
+  isAsync,
   isNotWindow,
   isNull,
   isObj,
@@ -90,32 +91,23 @@ const objectUdpated = (changes: Changes) => {
   });
 };
 
-const isDomConnected = (element: Elements) => {
-  return element && element.isConnected;
-};
-
-const ElementId: Mapper<string, Elements> = new Mapper();
+export const ElementIds: Mapper<string, Elements> = new Mapper();
 
 export const getElementById = (key: string): Elements | undefined => {
-  if (!ElementId.has(key)) {
-    const element = document.getElementById(key);
-    if (element) {
-      ElementId.set(key, element);
-      return element;
-    }
-  } else {
-    const element = ElementId.get(key);
-    if (element && isDomConnected(element)) {
-      return element;
-    }
-    ElementId.delete(key);
+  const cached = ElementIds.get(key);
+  if (cached?.isConnected) return cached;
+
+  ElementIds.delete(key);
+  const element = document.getElementById(key);
+
+  if (element) {
+    ElementIds.set(key, element);
+    return element;
   }
 
-  //
   return undefined;
 };
-
-const handleMappedStates = (states: stateMapped<any>, value: any) => {
+const handleStates = (states: stateMapped<any>, value: any) => {
   for (const [key, val] of states) {
     const D = getElementById(key);
     if (!D) {
@@ -159,7 +151,8 @@ export class Stateful<T> extends EventTarget {
   get listen() {
     // Register the listener once
     const handler = (event: CustomEvent) => {
-      handleMappedStates(this.states, event.detail);
+      handleStates(this.states, event.detail);
+      // registered callbacks?
       if (!this.states.size) this.end?.();
     };
 

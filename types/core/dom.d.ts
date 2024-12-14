@@ -11,7 +11,6 @@ declare class CTX {
     ctx: ctx[];
     closing: string;
     constructor(tag: string, ctx: ctx[]);
-    private hasTag;
     private getCallback;
     private process;
     get(catt: CATT): string;
